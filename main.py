@@ -3,8 +3,18 @@ import numpy
 
 
 def readMap(mapname):
-    f = open(mapname, "r", encoding='utf8')
+    map_file = open(mapname, "r", encoding='utf8')
     # meow viet doc file o day :3
+    # Read 2 number as size of map N x M.
+    lines = map_file.readlines()
+    map_file.close()
+    map_matrix = list()
+    if lines:
+        map_height, map_width = map(int(lines[0].split()))
+        map_matrix.extend(list(lines))
+        map_matrix.remove(map_matrix[0])
+        map_matrix.remove(map_matrix[len(map_matrix) - 1])
+    return map_matrix
 
 
 class AStarAgent:
