@@ -1,10 +1,8 @@
 import threading
 import time
-from math import *
 
 import wx
-import numpy
-
+from math import *
 
 #Constains
 WINDOW_HEIGHT = 600
@@ -213,17 +211,15 @@ class GameFrame(wx.Frame):
         pen.SetCap(wx.CAP_BUTT)
         dc.SetPen(pen)
         # draw map here
-        for i in range (self.maze_map.mapHeight):
+        for i in range(self.maze_map.mapHeight):
             for j in range(self.maze_map.mapWidth):
                 if self.maze_map.map[i][j] == WALL:
-                    print(1, end = '')
                     self.maze_map.drawCell(dc, i, j)
                 if self.maze_map.map[i][j] == FOOD:
-                    print(2, end = '')
                     self.maze_map.drawBitmap(dc, self.maze_map.diamonIcon, i, j)
-                if self.maze_map.map[i][j] == MONSTER:
-                    print(3, end = '')
-                    self.maze_map.drawBitmap(dc, self.maze_map.ghost[0], i, j)
+
+        for monster in self.monster_postion:
+            self.maze_map.drawBitmap(dc, self.maze_map.ghost[0], monster.position[0], monster.position[1])
 
     def start(self):
         while not self.agent.is_finished():
@@ -255,7 +251,7 @@ class Monster:
 if __name__ == '__main__':
     try:
         app = wx.App()
-        map_matrix, start_position = read_map(".\\test\\maps\\demo01.txt")
+        map_matrix, start_position = read_map(".\\test\\maps\\demo02.txt")
         game_frame = GameFrame(None, title="Test")
         game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
