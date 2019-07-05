@@ -73,22 +73,22 @@ class AStarAgent:
         monster_positions = [monster.position for monster in monsters]
 
         child = maze_map[x][y + 1]
-        if ((child == 0) or (child == 2)) and (child not in monster_positions):
+        if ((child == 0) or (child == 2)) and ((x, y + 1) not in monster_positions):
             childs.append(Node(parent=current_node,
                                position=(x, y + 1)))
 
         child = maze_map[x][y - 1]
-        if ((child == 0) or (child == 2)) and (child not in monster_positions):
+        if ((child == 0) or (child == 2)) and ((x, y - 1) not in monster_positions):
             childs.append(Node(parent=current_node,
                                position=(x, y - 1)))
 
         child = maze_map[x + 1][y]
-        if ((child == 0) or (child == 2)) and (child not in monster_positions):
+        if ((child == 0) or (child == 2)) and ((x + 1, y) not in monster_positions):
             childs.append(Node(parent=current_node,
                                position=(x + 1, y)))
 
         child = maze_map[x - 1][y]
-        if ((child == 0) or (child == 2)) and (child not in monster_positions):
+        if ((child == 0) or (child == 2)) and ((x - 1, y) not in monster_positions):
             childs.append(Node(parent=current_node,
                                position=(x - 1, y)))
 
@@ -270,7 +270,7 @@ class Monster:
 if __name__ == '__main__':
     try:
         app = wx.App()
-        map_matrix, start_position = read_map(".\\test\\maps\\demo01.txt")
+        map_matrix, start_position = read_map(".\\test\\maps\\demo02.txt")
         game_frame = GameFrame(None, title="Test")
         game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
