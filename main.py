@@ -85,6 +85,14 @@ class Map:
         self.DC.SetPen(self.pen)
         # Icons related.
         self.diamonIcon = createBitmap(".\\test\\icons\\diamon.png", self.cellSize)
+        self.pacman = []
+        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png"))
+        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png"))
+        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png"))
+        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png"))
+        self.ghost = []
+        self.ghost.append(createBitmap(".\\test\\icons\\ghost1.png"))
+        self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png"))
 
     def drawCell(self, x_pos, y_pos):
         self.DC.DrawLine(self.startDrawPos + self.cellSize * y_pos, self.cellSize * x_pos,\
