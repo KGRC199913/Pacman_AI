@@ -4,7 +4,7 @@ import time
 import wx
 from math import *
 
-#Constains
+# Constains
 WINDOW_HEIGHT = 600
 WINDOW_WIDTH = 800
 WALL = 1
@@ -12,8 +12,7 @@ FOOD = 2
 MONSTER = 3
 time_interval = 0.5
 
-
-#Global variables
+# Global variables
 MAZE_MAP = None
 
 
@@ -187,12 +186,12 @@ class Map:
         self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png", self.cellSize))
 
     def drawCell(self, clientDC, x_pos, y_pos):
-        clientDC.DrawLine(self.startDrawPos + self.cellSize * y_pos, self.cellSize * x_pos,\
-            self.startDrawPos + self.cellSize * y_pos + self.cellSize, self.cellSize * x_pos)
+        clientDC.DrawLine(self.startDrawPos + self.cellSize * y_pos, self.cellSize * x_pos, \
+                          self.startDrawPos + self.cellSize * y_pos + self.cellSize, self.cellSize * x_pos)
 
     def drawBitmap(self, clientDC, bitmap, x_pos, y_pos):
-        clientDC.DrawBitmap(bitmap, self.startDrawPos + self.cellSize * y_pos,\
-            self.cellSize * x_pos - floor(self.cellSize / 2), True)
+        clientDC.DrawBitmap(bitmap, self.startDrawPos + self.cellSize * y_pos, \
+                            self.cellSize * x_pos - floor(self.cellSize / 2), True)
 
 
 class GameFrame(wx.Frame):
@@ -264,4 +263,3 @@ if __name__ == '__main__':
         app.MainLoop()
     except RuntimeError:
         pass
-
