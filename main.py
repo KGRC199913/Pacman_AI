@@ -84,7 +84,7 @@ class Map:
         self.DC = clientDC
         self.DC.SetPen(self.pen)
         # Icons related.
-        self.diamonIcon = createBitmap("diamon.png", self.cellSize)
+        self.diamonIcon = createBitmap(".\\test\\icons\\diamon.png", self.cellSize)
 
     def drawCell(self, x_pos, y_pos):
         self.DC.DrawLine(self.startDrawPos + self.cellSize * y_pos, self.cellSize * x_pos,\
