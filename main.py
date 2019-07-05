@@ -78,11 +78,6 @@ class Map:
         if self.cellSize > floor(windowHeight / self.mapHeight):
             self.cellSize = floor(windowHeight / self.mapHeight)
         self.startDrawPos = floor((windowWidth - (self.mapWidth * self.cellSize)) / 2)
-        # Pen related.
-        self.pen = wx.Pen('#4c4c4c', self.cellSize)
-        self.pen.SetCap(wx.CAP_BUTT)
-        self.DC = clientDC
-        self.DC.SetPen(self.pen)
         # Icons related.
         self.diamonIcon = createBitmap(".\\test\\icons\\diamon.png", self.cellSize)
         self.pacman = []
@@ -94,12 +89,12 @@ class Map:
         self.ghost.append(createBitmap(".\\test\\icons\\ghost1.png"))
         self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png"))
 
-    def drawCell(self, x_pos, y_pos):
-        self.DC.DrawLine(self.startDrawPos + self.cellSize * y_pos, self.cellSize * x_pos,\
+    def drawCell(self, clientDC, x_pos, y_pos):
+        clientDC.DrawLine(self.startDrawPos + self.cellSize * y_pos, self.cellSize * x_pos,\
             self.startDrawPos + self.cellSize * y_pos + self.cellSize, self.cellSize * x_pos)
 
-    def drawBitmap(self, bitmap, x_pos, y_pos):
-        self.DC.DrawBitmap(bitmap, self.startDrawPos + self.cellSize * y_pos,\
+    def drawBitmap(self, clientDC, bitmap, x_pos, y_pos):
+        clientDC.DrawBitmap(bitmap, self.startDrawPos + self.cellSize * y_pos,\
             self.cellSize * x_pos - floor(self.cellSize / 2), True)
 
 
@@ -110,19 +105,24 @@ class GameFrame(wx.Frame):
         self.SetSize(windowHeight, windowWidth)
         self.agent = None
         self.current_position = None
+        # Complete here KGRC199913
+        self.maze_map = Map()
 
     def paint(self):
         dc = wx.ClientDC(self)
         dc.Clear()
+        pen = wx.Pen("#4c4c4c", self.maze_map.cellSize)
+        pen.SetCap(CAP_BUTT)
+        dc.SetPen(pen)
         # draw map here
-        maze_map = Map(self.agent.map, dc)
-
         for i in range (maze_map.mapHeight):
             for j in range(maze_map.mapWidth):
                 if maze_map.map[i][j] == "1":
-                    maze_map.drawCell(i, j)
+                    maze_map.drawCell(dc, i, j)
                 if maze_map.map[i][j] == "2":
-                    maze_map.drawBitmap(maze_map.diamonIcon, i, j)
+                    maze_map.drawBitmap(dc, maze_map.diamonIcon, i, j)
+                if maze_map.map[i][j] == "3":
+                    maze_map.drawBitmap(dc, maze_map.ghost[0])
 
     def start(self):
         while not self.agent.is_finished():
@@ -133,7 +133,7 @@ class GameFrame(wx.Frame):
 if __name__ == '__main__':
     app = wx.App()
     maze_map, start_position = read_map(".\\test\\maps\\demo01.txt")
-    game_frame = GameFrame(None, title="Test")
+    game_frame = GameFrame(None, title="Test", maze_map)
     game_frame.current_position = start_position
     game_frame.agent = AStarAgent(maze_map, start_position)
     game_frame.Show()
