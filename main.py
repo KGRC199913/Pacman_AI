@@ -1,5 +1,5 @@
+import threading
 import time
-from random import randrange
 from math import *
 
 import wx
@@ -9,6 +9,7 @@ import numpy
 #Constains
 windowHeight = 600
 windowWidth = 800
+time_interval = 0.5
 
 
 def read_map(map_name):
@@ -27,13 +28,17 @@ def read_map(map_name):
 
 
 class AStarAgent:
-    def __init__(self, maze_map, start_pos):
+    def __init__(self, maze_map, start_pos, monsters_list):
         self.map = maze_map
-
+        self.monsters = None
+        if not monsters_list:
+            self.monsters = []
+        else:
+            self.monsters = monsters_list
         start_node = Node(position=start_pos)
         end_node = Node(position=AStarAgent.__find_food(maze_map))
 
-        self.path = self.__a_star(self.map, start_node, end_node)
+        self.path = self.__a_star(self.map, start_node, end_node, self.monsters)
         self.start_pos = start_pos
         self.stepCount = -1
 
@@ -57,28 +62,29 @@ class AStarAgent:
 
     @staticmethod
     # find least f node for A*
-    def __generate_childs(maze_map, current_node):
+    def __generate_childs(maze_map, monsters, current_node):
         childs = []
         x = current_node.position[0]
         y = current_node.position[1]
+        monster_positions = [monster.position for monster in monsters]
 
         child = maze_map[x][y + 1]
-        if (child == 0) or (child == 2):
+        if ((child == 0) or (child == 2)) and (child not in monster_positions):
             childs.append(Node(parent=current_node,
                                position=(x, y + 1)))
 
         child = maze_map[x][y - 1]
-        if (child == 0) or (child == 2):
+        if ((child == 0) or (child == 2)) and (child not in monster_positions):
             childs.append(Node(parent=current_node,
                                position=(x, y - 1)))
 
         child = maze_map[x + 1][y]
-        if (child == 0) or (child == 2):
+        if ((child == 0) or (child == 2)) and (child not in monster_positions):
             childs.append(Node(parent=current_node,
                                position=(x + 1, y)))
 
         child = maze_map[x - 1][y]
-        if (child == 0) or (child == 2):
+        if ((child == 0) or (child == 2)) and (child not in monster_positions):
             childs.append(Node(parent=current_node,
                                position=(x - 1, y)))
 
@@ -98,10 +104,13 @@ class AStarAgent:
 
     @staticmethod
     # a* search alg
-    def __a_star(maze_map, start_node, end_node):
+    def __a_star(maze_map, start_node, end_node, monster_positions):
         open_list = []
         closed_list = []
         path = []
+        if monster_positions is None:
+            monster_positions = []
+
         if start_node is not end_node:
             open_list.append(start_node)
 
@@ -115,7 +124,7 @@ class AStarAgent:
                     current_node = current_node.parent
                 return path[::-1]
 
-            childs = AStarAgent.__generate_childs(maze_map, current_node)
+            childs = AStarAgent.__generate_childs(maze_map, monster_positions, current_node)
 
             for child in childs:
                 if child in closed_list:
@@ -178,13 +187,13 @@ class Map:
             self.cellSize * x_pos - floor(self.cellSize / 2), True)
 
 
-
 class GameFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(GameFrame, self).__init__(*args, **kwargs)
         self.SetSize(windowHeight, windowWidth)
         self.agent = None
         self.current_position = None
+        self.monster_postion = None
 
     def paint(self):
         dc = wx.ClientDC(self)
@@ -192,25 +201,52 @@ class GameFrame(wx.Frame):
         # draw map here
         maze_map = Map(self.agent.map, dc)
 
-        for i in range (maze_map.mapHeight):
+        for i in range(maze_map.mapHeight):
             for j in range(maze_map.mapWidth):
-                if maze_map.map[i][j] == "1":
+                if maze_map.map[i][j] == 1:
                     maze_map.drawCell(i, j)
-                if maze_map.map[i][j] == "2":
+                if maze_map.map[i][j] == 2:
                     maze_map.drawBitmap(maze_map.diamonIcon, i, j)
 
     def start(self):
         while not self.agent.is_finished():
             self.current_position = self.agent.get_next_step()
             self.paint()
+            time.sleep(time_interval)
+
+    @staticmethod
+    def find_monster(maze_map):
+        if maze_map is None:
+            return None
+        monsters = []
+        height = len(maze_map)
+        width = len(maze_map[0])
+        for i in range(height):
+            for j in range(width):
+                if maze_map[i][j] == 3:
+                    monsters.append(Monster(position=(i, j)))
+                    maze_map[i][j] = 0
+        return monsters
+
+
+class Monster:
+    def __init__(self, position):
+        self.position = position
+        self.obj_under = 0
 
 
 if __name__ == '__main__':
-    app = wx.App()
-    maze_map, start_position = read_map(".\\test\\maps\\demo02.txt")
-    game_frame = GameFrame(None, title="Test")
-    game_frame.current_position = start_position
-    game_frame.agent = AStarAgent(maze_map, start_position)
-    game_frame.Show()
-    game_frame.start()
-    app.MainLoop()
+    try:
+        app = wx.App()
+        maze_map, start_position = read_map(".\\test\\maps\\demo02.txt")
+        game_frame = GameFrame(None, title="Test")
+        game_frame.current_position = start_position
+        monster_positions = GameFrame.find_monster(maze_map)
+        game_frame.agent = AStarAgent(maze_map, start_position, monster_positions)
+        game_frame.monster_postion = monster_positions
+        game_frame.Show()
+        thread = threading.Thread(target=game_frame.start)
+        thread.start()
+        app.MainLoop()
+    except RuntimeError:
+        pass
