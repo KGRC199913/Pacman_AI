@@ -7,8 +7,10 @@ import numpy
 
 
 #Constains
-windowHeight = 600
-windowWidth = 800
+WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 800
+FOOD = 2
+WALL = 1
 
 
 def read_map(map_name):
@@ -92,7 +94,7 @@ class AStarAgent:
         width = len(maze_map[0])
         for i in range(height):
             for j in range(width):
-                if maze_map[i][j] == 2:
+                if maze_map[i][j] == FOOD:
                     return i, j
         return None
 
@@ -157,10 +159,10 @@ class Map:
         self.map = maze_map
         self.mapWidth = len(maze_map[0])
         self.mapHeight = len(maze_map)
-        self.cellSize = floor(windowWidth / self.mapWidth)
-        if self.cellSize > floor(windowHeight / self.mapHeight):
-            self.cellSize = floor(windowHeight / self.mapHeight)
-        self.startDrawPos = floor((windowWidth - (self.mapWidth * self.cellSize)) / 2)
+        self.cellSize = floor(WINDOW_WIDTH / self.mapWidth)
+        if self.cellSize > floor(WINDOW_HEIGHT / self.mapHeight):
+            self.cellSize = floor(WINDOW_HEIGHT / self.mapHeight)
+        self.startDrawPos = floor((WINDOW_WIDTH - (self.mapWidth * self.cellSize)) / 2)
         # Pen related.
         self.pen = wx.Pen('#4c4c4c', self.cellSize)
         self.pen.SetCap(wx.CAP_BUTT)
@@ -182,7 +184,7 @@ class Map:
 class GameFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(GameFrame, self).__init__(*args, **kwargs)
-        self.SetSize(windowHeight, windowWidth)
+        self.SetSize(WINDOW_WIDTH, WINDOW_HEIGHT)
         self.agent = None
         self.current_position = None
 
@@ -194,9 +196,9 @@ class GameFrame(wx.Frame):
 
         for i in range (maze_map.mapHeight):
             for j in range(maze_map.mapWidth):
-                if maze_map.map[i][j] == "1":
+                if maze_map.map[i][j] == 1:
                     maze_map.drawCell(i, j)
-                if maze_map.map[i][j] == "2":
+                if maze_map.map[i][j] == 2:
                     maze_map.drawBitmap(maze_map.diamonIcon, i, j)
 
     def start(self):
@@ -207,7 +209,7 @@ class GameFrame(wx.Frame):
 
 if __name__ == '__main__':
     app = wx.App()
-    maze_map, start_position = read_map(".\\test\\maps\\demo02.txt")
+    maze_map, start_position = read_map(".\\test\\maps\\demo01.txt")
     game_frame = GameFrame(None, title="Test")
     game_frame.current_position = start_position
     game_frame.agent = AStarAgent(maze_map, start_position)
