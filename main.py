@@ -7,8 +7,10 @@ import numpy
 
 
 #Constains
-windowHeight = 600
-windowWidth = 800
+WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 800
+FOOD = 2
+MONSTER = 3
 time_interval = 0.5
 
 
@@ -98,7 +100,7 @@ class AStarAgent:
         width = len(maze_map[0])
         for i in range(height):
             for j in range(width):
-                if maze_map[i][j] == 2:
+                if maze_map[i][j] == FOOD:
                     return i, j
         return None
 
@@ -166,47 +168,55 @@ class Map:
         self.map = maze_map
         self.mapWidth = len(maze_map[0])
         self.mapHeight = len(maze_map)
-        self.cellSize = floor(windowWidth / self.mapWidth)
-        if self.cellSize > floor(windowHeight / self.mapHeight):
-            self.cellSize = floor(windowHeight / self.mapHeight)
-        self.startDrawPos = floor((windowWidth - (self.mapWidth * self.cellSize)) / 2)
-        # Pen related.
-        self.pen = wx.Pen('#4c4c4c', self.cellSize)
-        self.pen.SetCap(wx.CAP_BUTT)
-        self.DC = clientDC
-        self.DC.SetPen(self.pen)
+        self.cellSize = floor(WINDOW_WIDTH / self.mapWidth)
+        if self.cellSize > floor(WINDOW_HEIGHT / self.mapHeight):
+            self.cellSize = floor(WINDOW_HEIGHT / self.mapHeight)
+        self.startDrawPos = floor((WINDOW_WIDTH - (self.mapWidth * self.cellSize)) / 2)
         # Icons related.
         self.diamonIcon = createBitmap(".\\test\\icons\\diamon.png", self.cellSize)
+        self.pacman = []
+        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png"))
+        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png"))
+        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png"))
+        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png"))
+        self.ghost = []
+        self.ghost.append(createBitmap(".\\test\\icons\\ghost1.png"))
+        self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png"))
 
-    def drawCell(self, x_pos, y_pos):
-        self.DC.DrawLine(self.startDrawPos + self.cellSize * y_pos, self.cellSize * x_pos,\
+    def drawCell(self, clientDC, x_pos, y_pos):
+        clientDC.DrawLine(self.startDrawPos + self.cellSize * y_pos, self.cellSize * x_pos,\
             self.startDrawPos + self.cellSize * y_pos + self.cellSize, self.cellSize * x_pos)
 
-    def drawBitmap(self, bitmap, x_pos, y_pos):
-        self.DC.DrawBitmap(bitmap, self.startDrawPos + self.cellSize * y_pos,\
+    def drawBitmap(self, clientDC, bitmap, x_pos, y_pos):
+        clientDC.DrawBitmap(bitmap, self.startDrawPos + self.cellSize * y_pos,\
             self.cellSize * x_pos - floor(self.cellSize / 2), True)
 
 
 class GameFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(GameFrame, self).__init__(*args, **kwargs)
-        self.SetSize(windowHeight, windowWidth)
+        self.SetSize(WINDOW_HEIGHT, WINDOW_WIDTH)
         self.agent = None
         self.current_position = None
+        self.maze_map = Map()
+
         self.monster_postion = None
 
     def paint(self):
         dc = wx.ClientDC(self)
         dc.Clear()
+        pen = wx.Pen("#4c4c4c", self.maze_map.cellSize)
+        pen.SetCap(CAP_BUTT)
+        dc.SetPen(pen)
         # draw map here
-        maze_map = Map(self.agent.map, dc)
-
-        for i in range(maze_map.mapHeight):
+        for i in range (maze_map.mapHeight):
             for j in range(maze_map.mapWidth):
-                if maze_map.map[i][j] == 1:
-                    maze_map.drawCell(i, j)
-                if maze_map.map[i][j] == 2:
-                    maze_map.drawBitmap(maze_map.diamonIcon, i, j)
+                if maze_map.map[i][j] == "1":
+                    maze_map.drawCell(dc, i, j)
+                if maze_map.map[i][j] == "2":
+                    maze_map.drawBitmap(dc, maze_map.diamonIcon, i, j)
+                if maze_map.map[i][j] == "3":
+                    maze_map.drawBitmap(dc, maze_map.ghost[0])
 
     def start(self):
         while not self.agent.is_finished():
@@ -223,7 +233,7 @@ class GameFrame(wx.Frame):
         width = len(maze_map[0])
         for i in range(height):
             for j in range(width):
-                if maze_map[i][j] == 3:
+                if maze_map[i][j] == MONSTER:
                     monsters.append(Monster(position=(i, j)))
                     maze_map[i][j] = 0
         return monsters
@@ -250,3 +260,4 @@ if __name__ == '__main__':
         app.MainLoop()
     except RuntimeError:
         pass
+
