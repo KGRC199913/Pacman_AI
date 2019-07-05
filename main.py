@@ -10,6 +10,7 @@ import numpy
 WINDOW_HEIGHT = 600
 WINDOW_WIDTH = 800
 FOOD = 2
+MONSTER = 3
 time_interval = 0.5
 
 
@@ -194,13 +195,12 @@ class Map:
 class GameFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(GameFrame, self).__init__(*args, **kwargs)
-        self.SetSize(windowHeight, WINDOW_WIDTH)
+        self.SetSize(WINDOW_HEIGHT, WINDOW_WIDTH)
         self.agent = None
         self.current_position = None
         self.maze_map = Map()
 
         self.monster_postion = None
-
 
     def paint(self):
         dc = wx.ClientDC(self)
@@ -233,7 +233,7 @@ class GameFrame(wx.Frame):
         width = len(maze_map[0])
         for i in range(height):
             for j in range(width):
-                if maze_map[i][j] == 3:
+                if maze_map[i][j] == MONSTER:
                     monsters.append(Monster(position=(i, j)))
                     maze_map[i][j] = 0
         return monsters
