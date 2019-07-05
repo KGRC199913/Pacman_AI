@@ -182,7 +182,7 @@ class Map:
 class GameFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(GameFrame, self).__init__(*args, **kwargs)
-        self.SetSize(windowHeight, windowWidth)
+        self.SetSize(windowWidth, windowHeight)
         self.agent = None
         self.current_position = None
 
@@ -194,9 +194,9 @@ class GameFrame(wx.Frame):
 
         for i in range (maze_map.mapHeight):
             for j in range(maze_map.mapWidth):
-                if maze_map.map[i][j] == "1":
+                if maze_map.map[i][j] == 1:
                     maze_map.drawCell(i, j)
-                if maze_map.map[i][j] == "2":
+                if maze_map.map[i][j] == 2:
                     maze_map.drawBitmap(maze_map.diamonIcon, i, j)
 
     def start(self):
@@ -207,7 +207,7 @@ class GameFrame(wx.Frame):
 
 if __name__ == '__main__':
     app = wx.App()
-    maze_map, start_position = read_map(".\\test\\maps\\demo02.txt")
+    maze_map, start_position = read_map(".\\test\\maps\\demo01.txt")
     game_frame = GameFrame(None, title="Test")
     game_frame.current_position = start_position
     game_frame.agent = AStarAgent(maze_map, start_position)
