@@ -1,17 +1,19 @@
 import threading
 import time
-from math import *
 
 import wx
-import numpy
+from math import *
 
-
-#Constains
+# Constains
 WINDOW_HEIGHT = 600
 WINDOW_WIDTH = 800
+WALL = 1
 FOOD = 2
 MONSTER = 3
-time_interval = 0.5
+time_interval = 0.2
+
+# Global variables
+MAZE_MAP = None
 
 
 def read_map(map_name):
@@ -24,7 +26,7 @@ def read_map(map_name):
                                   for x in lines[len(lines) - 1].split(' ')]
     del lines[-1]
     for line in lines:
-        maze_map.append([int(x) for x in list(line.rstrip('\n'))])
+        maze_map.append([int(x) for x in line.split(' ')])
 
     return maze_map, (x_pacman_pos, y_pacman_pos)
 
@@ -71,22 +73,22 @@ class AStarAgent:
         monster_positions = [monster.position for monster in monsters]
 
         child = maze_map[x][y + 1]
-        if ((child == 0) or (child == 2)) and (child not in monster_positions):
+        if ((child == 0) or (child == 2)) and ((x, y + 1) not in monster_positions):
             childs.append(Node(parent=current_node,
                                position=(x, y + 1)))
 
         child = maze_map[x][y - 1]
-        if ((child == 0) or (child == 2)) and (child not in monster_positions):
+        if ((child == 0) or (child == 2)) and ((x, y - 1) not in monster_positions):
             childs.append(Node(parent=current_node,
                                position=(x, y - 1)))
 
         child = maze_map[x + 1][y]
-        if ((child == 0) or (child == 2)) and (child not in monster_positions):
+        if ((child == 0) or (child == 2)) and ((x + 1, y) not in monster_positions):
             childs.append(Node(parent=current_node,
                                position=(x + 1, y)))
 
         child = maze_map[x - 1][y]
-        if ((child == 0) or (child == 2)) and (child not in monster_positions):
+        if ((child == 0) or (child == 2)) and ((x - 1, y) not in monster_positions):
             childs.append(Node(parent=current_node,
                                position=(x - 1, y)))
 
@@ -163,7 +165,7 @@ def createBitmap(path, cellSize):
 
 
 class Map:
-    def __init__(self, maze_map, clientDC):
+    def __init__(self, maze_map):
         # Map related.
         self.map = maze_map
         self.mapWidth = len(maze_map[0])
@@ -175,53 +177,73 @@ class Map:
         # Icons related.
         self.diamonIcon = createBitmap(".\\test\\icons\\diamon.png", self.cellSize)
         self.pacman = []
-        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png"))
-        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png"))
-        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png"))
-        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png"))
+        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png", self.cellSize))
+        self.pacman.append(createBitmap(".\\test\\icons\\pacman2.png", self.cellSize))
+        self.pacman.append(createBitmap(".\\test\\icons\\pacman3.png", self.cellSize))
+        self.pacman.append(createBitmap(".\\test\\icons\\pacman4.png", self.cellSize))
         self.ghost = []
-        self.ghost.append(createBitmap(".\\test\\icons\\ghost1.png"))
-        self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png"))
+        self.ghost.append(createBitmap(".\\test\\icons\\ghost1.png", self.cellSize))
+        self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png", self.cellSize))
 
     def drawCell(self, clientDC, x_pos, y_pos):
-        clientDC.DrawLine(self.startDrawPos + self.cellSize * y_pos, self.cellSize * x_pos,\
-            self.startDrawPos + self.cellSize * y_pos + self.cellSize, self.cellSize * x_pos)
+        clientDC.DrawLine(self.startDrawPos + self.cellSize * y_pos, self.cellSize * x_pos, \
+                          self.startDrawPos + self.cellSize * y_pos + self.cellSize, self.cellSize * x_pos)
 
     def drawBitmap(self, clientDC, bitmap, x_pos, y_pos):
-        clientDC.DrawBitmap(bitmap, self.startDrawPos + self.cellSize * y_pos,\
-            self.cellSize * x_pos - floor(self.cellSize / 2), True)
+        clientDC.DrawBitmap(bitmap, self.startDrawPos + self.cellSize * y_pos, \
+                            self.cellSize * x_pos - floor(self.cellSize / 2), True)
+
+
+def changeDirection(old_position, current_position):
+    if type(old_position) != type(current_position):
+        return 0
+    if old_position.position[1] == current_position.position[1]:
+        if old_position.position[0] < current_position.position[0]:
+            return 4
+        else:
+            return 2
+    if old_position.position[0] == current_position.position[0]:
+        if old_position.position[1] < current_position.position[1]:
+            return 3
+        else:
+            return 1
 
 
 class GameFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(GameFrame, self).__init__(*args, **kwargs)
-        self.SetSize(WINDOW_HEIGHT, WINDOW_WIDTH)
+        self.SetSize(WINDOW_WIDTH, WINDOW_HEIGHT)
         self.agent = None
         self.current_position = None
-        self.maze_map = Map()
-
+        self.maze_map = None
         self.monster_postion = None
 
-    def paint(self):
+    def paint(self, newDirection):
         dc = wx.ClientDC(self)
         dc.Clear()
         pen = wx.Pen("#4c4c4c", self.maze_map.cellSize)
-        pen.SetCap(CAP_BUTT)
+        pen.SetCap(wx.CAP_BUTT)
         dc.SetPen(pen)
         # draw map here
-        for i in range (maze_map.mapHeight):
-            for j in range(maze_map.mapWidth):
-                if maze_map.map[i][j] == "1":
-                    maze_map.drawCell(dc, i, j)
-                if maze_map.map[i][j] == "2":
-                    maze_map.drawBitmap(dc, maze_map.diamonIcon, i, j)
-                if maze_map.map[i][j] == "3":
-                    maze_map.drawBitmap(dc, maze_map.ghost[0])
+        self.maze_map.drawBitmap(dc, self.maze_map.pacman[newDirection - 1],\
+            self.current_position.position[0], self.current_position.position[1])
+        for i in range(self.maze_map.mapHeight):
+            for j in range(self.maze_map.mapWidth):
+                if self.maze_map.map[i][j] == WALL:
+                    self.maze_map.drawCell(dc, i, j)
+                if self.maze_map.map[i][j] == FOOD:
+                    self.maze_map.drawBitmap(dc, self.maze_map.diamonIcon, i, j)
+
+        for monster in self.monster_postion:
+            self.maze_map.drawBitmap(dc, self.maze_map.ghost[0],\
+                monster.position[0], monster.position[1])
 
     def start(self):
         while not self.agent.is_finished():
+            old_position = self.current_position
             self.current_position = self.agent.get_next_step()
-            self.paint()
+            newDirection = changeDirection(old_position, self.current_position)
+            self.paint(newDirection)
             time.sleep(time_interval)
 
     @staticmethod
@@ -248,11 +270,12 @@ class Monster:
 if __name__ == '__main__':
     try:
         app = wx.App()
-        maze_map, start_position = read_map(".\\test\\maps\\demo02.txt")
+        map_matrix, start_position = read_map(".\\test\\maps\\demo02.txt")
         game_frame = GameFrame(None, title="Test")
+        game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
-        monster_positions = GameFrame.find_monster(maze_map)
-        game_frame.agent = AStarAgent(maze_map, start_position, monster_positions)
+        monster_positions = GameFrame.find_monster(map_matrix)
+        game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
         game_frame.monster_postion = monster_positions
         game_frame.Show()
         thread = threading.Thread(target=game_frame.start)
@@ -260,4 +283,3 @@ if __name__ == '__main__':
         app.MainLoop()
     except RuntimeError:
         pass
-
