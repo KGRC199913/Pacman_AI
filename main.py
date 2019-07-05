@@ -9,9 +9,14 @@ import numpy
 #Constains
 WINDOW_HEIGHT = 600
 WINDOW_WIDTH = 800
+WALL = 1
 FOOD = 2
 MONSTER = 3
 time_interval = 0.5
+
+
+#Global variables
+MAZE_MAP = None
 
 
 def read_map(map_name):
@@ -163,7 +168,7 @@ def createBitmap(path, cellSize):
 
 
 class Map:
-    def __init__(self, maze_map, clientDC):
+    def __init__(self, maze_map):
         # Map related.
         self.map = maze_map
         self.mapWidth = len(maze_map[0])
@@ -175,13 +180,13 @@ class Map:
         # Icons related.
         self.diamonIcon = createBitmap(".\\test\\icons\\diamon.png", self.cellSize)
         self.pacman = []
-        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png"))
-        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png"))
-        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png"))
-        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png"))
+        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png", self.cellSize))
+        self.pacman.append(createBitmap(".\\test\\icons\\pacman2.png", self.cellSize))
+        self.pacman.append(createBitmap(".\\test\\icons\\pacman3.png", self.cellSize))
+        self.pacman.append(createBitmap(".\\test\\icons\\pacman4.png", self.cellSize))
         self.ghost = []
-        self.ghost.append(createBitmap(".\\test\\icons\\ghost1.png"))
-        self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png"))
+        self.ghost.append(createBitmap(".\\test\\icons\\ghost1.png", self.cellSize))
+        self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png", self.cellSize))
 
     def drawCell(self, clientDC, x_pos, y_pos):
         clientDC.DrawLine(self.startDrawPos + self.cellSize * y_pos, self.cellSize * x_pos,\
@@ -195,28 +200,30 @@ class Map:
 class GameFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(GameFrame, self).__init__(*args, **kwargs)
-        self.SetSize(WINDOW_HEIGHT, WINDOW_WIDTH)
+        self.SetSize(WINDOW_WIDTH, WINDOW_HEIGHT)
         self.agent = None
         self.current_position = None
-        self.maze_map = Map()
-
+        self.maze_map = None
         self.monster_postion = None
 
     def paint(self):
         dc = wx.ClientDC(self)
         dc.Clear()
         pen = wx.Pen("#4c4c4c", self.maze_map.cellSize)
-        pen.SetCap(CAP_BUTT)
+        pen.SetCap(wx.CAP_BUTT)
         dc.SetPen(pen)
         # draw map here
-        for i in range (maze_map.mapHeight):
-            for j in range(maze_map.mapWidth):
-                if maze_map.map[i][j] == "1":
-                    maze_map.drawCell(dc, i, j)
-                if maze_map.map[i][j] == "2":
-                    maze_map.drawBitmap(dc, maze_map.diamonIcon, i, j)
-                if maze_map.map[i][j] == "3":
-                    maze_map.drawBitmap(dc, maze_map.ghost[0])
+        for i in range (self.maze_map.mapHeight):
+            for j in range(self.maze_map.mapWidth):
+                if self.maze_map.map[i][j] == WALL:
+                    print(1, end = '')
+                    self.maze_map.drawCell(dc, i, j)
+                if self.maze_map.map[i][j] == FOOD:
+                    print(2, end = '')
+                    self.maze_map.drawBitmap(dc, self.maze_map.diamonIcon, i, j)
+                if self.maze_map.map[i][j] == MONSTER:
+                    print(3, end = '')
+                    self.maze_map.drawBitmap(dc, self.maze_map.ghost[0], i, j)
 
     def start(self):
         while not self.agent.is_finished():
@@ -248,11 +255,12 @@ class Monster:
 if __name__ == '__main__':
     try:
         app = wx.App()
-        maze_map, start_position = read_map(".\\test\\maps\\demo02.txt")
+        map_matrix, start_position = read_map(".\\test\\maps\\demo01.txt")
         game_frame = GameFrame(None, title="Test")
+        game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
-        monster_positions = GameFrame.find_monster(maze_map)
-        game_frame.agent = AStarAgent(maze_map, start_position, monster_positions)
+        monster_positions = GameFrame.find_monster(map_matrix)
+        game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
         game_frame.monster_postion = monster_positions
         game_frame.Show()
         thread = threading.Thread(target=game_frame.start)
