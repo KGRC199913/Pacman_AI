@@ -10,7 +10,7 @@ WINDOW_WIDTH = 800
 WALL = 1
 FOOD = 2
 MONSTER = 3
-time_interval = 0.5
+time_interval = 0.2
 
 # Global variables
 MAZE_MAP = None
@@ -194,6 +194,21 @@ class Map:
                             self.cellSize * x_pos - floor(self.cellSize / 2), True)
 
 
+def changeDirection(old_position, current_position):
+    if type(old_position) != type(current_position):
+        return 0
+    if old_position.position[1] == current_position.position[1]:
+        if old_position.position[0] < current_position.position[0]:
+            return 4
+        else:
+            return 2
+    if old_position.position[0] == current_position.position[0]:
+        if old_position.position[1] < current_position.position[1]:
+            return 3
+        else:
+            return 1
+
+
 class GameFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(GameFrame, self).__init__(*args, **kwargs)
@@ -203,13 +218,15 @@ class GameFrame(wx.Frame):
         self.maze_map = None
         self.monster_postion = None
 
-    def paint(self):
+    def paint(self, newDirection):
         dc = wx.ClientDC(self)
         dc.Clear()
         pen = wx.Pen("#4c4c4c", self.maze_map.cellSize)
         pen.SetCap(wx.CAP_BUTT)
         dc.SetPen(pen)
         # draw map here
+        self.maze_map.drawBitmap(dc, self.maze_map.pacman[newDirection - 1],\
+            self.current_position.position[0], self.current_position.position[1])
         for i in range(self.maze_map.mapHeight):
             for j in range(self.maze_map.mapWidth):
                 if self.maze_map.map[i][j] == WALL:
@@ -218,12 +235,15 @@ class GameFrame(wx.Frame):
                     self.maze_map.drawBitmap(dc, self.maze_map.diamonIcon, i, j)
 
         for monster in self.monster_postion:
-            self.maze_map.drawBitmap(dc, self.maze_map.ghost[0], monster.position[0], monster.position[1])
+            self.maze_map.drawBitmap(dc, self.maze_map.ghost[0],\
+                monster.position[0], monster.position[1])
 
     def start(self):
         while not self.agent.is_finished():
+            old_position = self.current_position
             self.current_position = self.agent.get_next_step()
-            self.paint()
+            newDirection = changeDirection(old_position, self.current_position)
+            self.paint(newDirection)
             time.sleep(time_interval)
 
     @staticmethod
@@ -250,7 +270,7 @@ class Monster:
 if __name__ == '__main__':
     try:
         app = wx.App()
-        map_matrix, start_position = read_map(".\\test\\maps\\demo02.txt")
+        map_matrix, start_position = read_map(".\\test\\maps\\demo01.txt")
         game_frame = GameFrame(None, title="Test")
         game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
