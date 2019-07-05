@@ -7,8 +7,9 @@ import numpy
 
 
 #Constains
-windowHeight = 600
-windowWidth = 800
+WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 800
+FOOD = 2
 time_interval = 0.5
 
 
@@ -98,7 +99,7 @@ class AStarAgent:
         width = len(maze_map[0])
         for i in range(height):
             for j in range(width):
-                if maze_map[i][j] == 2:
+                if maze_map[i][j] == FOOD:
                     return i, j
         return None
 
@@ -166,10 +167,10 @@ class Map:
         self.map = maze_map
         self.mapWidth = len(maze_map[0])
         self.mapHeight = len(maze_map)
-        self.cellSize = floor(windowWidth / self.mapWidth)
-        if self.cellSize > floor(windowHeight / self.mapHeight):
-            self.cellSize = floor(windowHeight / self.mapHeight)
-        self.startDrawPos = floor((windowWidth - (self.mapWidth * self.cellSize)) / 2)
+        self.cellSize = floor(WINDOW_WIDTH / self.mapWidth)
+        if self.cellSize > floor(WINDOW_HEIGHT / self.mapHeight):
+            self.cellSize = floor(WINDOW_HEIGHT / self.mapHeight)
+        self.startDrawPos = floor((WINDOW_WIDTH - (self.mapWidth * self.cellSize)) / 2)
         # Icons related.
         self.diamonIcon = createBitmap(".\\test\\icons\\diamon.png", self.cellSize)
         self.pacman = []
@@ -193,7 +194,7 @@ class Map:
 class GameFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(GameFrame, self).__init__(*args, **kwargs)
-        self.SetSize(windowHeight, windowWidth)
+        self.SetSize(windowHeight, WINDOW_WIDTH)
         self.agent = None
         self.current_position = None
         self.maze_map = Map()
