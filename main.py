@@ -9,7 +9,6 @@ import numpy
 #Constains
 windowHeight = 600
 windowWidth = 800
-cellSize = 5
 
 
 def read_map(map_name):
@@ -145,6 +144,41 @@ class Node:
         return self.position == other.position
 
 
+def createBitmap(path, cellSize):
+    bitmap = wx.Bitmap(path)
+    img = bitmap.ConvertToImage()
+    img = img.Scale(cellSize, cellSize, wx.IMAGE_QUALITY_HIGH)
+    return wx.Bitmap(img)
+
+
+class Map:
+    def __init__(self, maze_map, clientDC):
+        # Map related.
+        self.map = maze_map
+        self.mapWidth = len(maze_map[0])
+        self.mapHeight = len(maze_map)
+        self.cellSize = floor(windowWidth / self.mapWidth)
+        if self.cellSize > floor(windowHeight / self.mapHeight):
+            self.cellSize = floor(windowHeight / self.mapHeight)
+        self.startDrawPos = floor((windowWidth - (self.mapWidth * self.cellSize)) / 2)
+        # Pen related.
+        self.pen = wx.Pen('#4c4c4c', self.cellSize)
+        self.pen.SetCap(wx.CAP_BUTT)
+        self.DC = clientDC
+        self.DC.SetPen(self.pen)
+        # Icons related.
+        self.diamonIcon = createBitmap(".\\test\\icons\\diamon.png", self.cellSize)
+
+    def drawCell(self, x_pos, y_pos):
+        self.DC.DrawLine(self.startDrawPos + self.cellSize * y_pos, self.cellSize * x_pos,\
+            self.startDrawPos + self.cellSize * y_pos + self.cellSize, self.cellSize * x_pos)
+
+    def drawBitmap(self, bitmap, x_pos, y_pos):
+        self.DC.DrawBitmap(bitmap, self.startDrawPos + self.cellSize * y_pos,\
+            self.cellSize * x_pos - floor(self.cellSize / 2), True)
+
+
+
 class GameFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(GameFrame, self).__init__(*args, **kwargs)
@@ -156,26 +190,14 @@ class GameFrame(wx.Frame):
         dc = wx.ClientDC(self)
         dc.Clear()
         # draw map here
-        maze_map = self.agent.map
-        mapWidth = len(maze_map[0])
-        mapHeight = len(maze_map)
+        maze_map = Map(self.agent.map, dc)
 
-        if windowWidth / mapWidth <= windowHeight / mapHeight:
-            cellSize = floor(windowWidth / mapWidth)
-        else:
-            cellSize = floor(windowHeight / mapHeight)
-
-        startDrawPos = floor((windowWidth - (mapWidth * cellSize)) / 2)
-
-        pen = wx.Pen('#4c4c4c', cellSize)
-        pen.SetCap(wx.CAP_BUTT)
-        dc.SetPen(pen)
-
-        for i in range (mapHeight):
-            for j in range(mapWidth):
-                if maze_map[i][j] == "1":
-                    dc.DrawLine(startDrawPos + cellSize * j, cellSize * i, \
-                        startDrawPos + cellSize * j + cellSize, cellSize * i)
+        for i in range (maze_map.mapHeight):
+            for j in range(maze_map.mapWidth):
+                if maze_map.map[i][j] == "1":
+                    maze_map.drawCell(i, j)
+                if maze_map.map[i][j] == "2":
+                    maze_map.drawBitmap(maze_map.diamonIcon, i, j)
 
     def start(self):
         while not self.agent.is_finished():
