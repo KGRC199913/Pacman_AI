@@ -1,8 +1,15 @@
 import time
 from random import randrange
+from math import *
 
 import wx
 import numpy
+
+
+#Constains
+windowHeight = 600
+windowWidth = 800
+cellSize = 5
 
 
 def read_map(map_name):
@@ -58,7 +65,7 @@ class Node:
 class GameFrame(wx.Frame):
     def __init__(self, *args, **kwargs):
         super(GameFrame, self).__init__(*args, **kwargs)
-        self.SetSize(800, 600)
+        self.SetSize(windowHeight, windowWidth)
         self.agent = None
         self.current_position = None
 
@@ -66,7 +73,26 @@ class GameFrame(wx.Frame):
         dc = wx.ClientDC(self)
         dc.Clear()
         # draw map here
-        #
+        maze_map = self.agent.map
+        mapWidth = len(maze_map[0])
+        mapHeight = len(maze_map)
+
+        if windowWidth / mapWidth <= windowHeight / mapHeight:
+            cellSize = floor(windowWidth / mapWidth)
+        else:
+            cellSize = floor(windowHeight / mapHeight)
+
+        startDrawPos = floor((windowWidth - (mapWidth * cellSize)) / 2)
+
+        pen = wx.Pen('#4c4c4c', cellSize)
+        pen.SetCap(wx.CAP_BUTT)
+        dc.SetPen(pen)
+
+        for i in range (mapHeight):
+            for j in range(mapWidth):
+                if maze_map[i][j] == "1":
+                    dc.DrawLine(startDrawPos + cellSize * j, cellSize * i, \
+                        startDrawPos + cellSize * j + cellSize, cellSize * i)
 
     def start(self):
         while not self.agent.is_finished():
