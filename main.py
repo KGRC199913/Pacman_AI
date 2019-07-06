@@ -137,8 +137,8 @@ class AStarAgent:
                 child.h = AStarAgent.__manhattan_heuristic(child, end_node)
                 child.f = child.g + child.h
 
-                if child in open_list:
-                    if child.g > current_node.g:
+                for node in open_list:
+                    if child == node and child.g > current_node.g:
                         continue
                 open_list.append(child)
 
@@ -270,7 +270,7 @@ class Monster:
 if __name__ == '__main__':
     try:
         app = wx.App()
-        map_matrix, start_position = read_map(".\\test\\maps\\demo02.txt")
+        map_matrix, start_position = read_map(".\\test\\maps\\demo01.txt")
         game_frame = GameFrame(None, title="Test")
         game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
