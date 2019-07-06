@@ -14,9 +14,6 @@ FOOD = 2
 MONSTER = 3
 time_interval = 0.2
 
-# Global variables
-MAZE_MAP = None
-
 
 def read_map(map_name):
     maze_map = []
@@ -176,6 +173,11 @@ class Map:
         if self.cellSize > floor(WINDOW_HEIGHT / self.mapHeight):
             self.cellSize = floor(WINDOW_HEIGHT / self.mapHeight)
         self.startDrawPos = floor((WINDOW_WIDTH - (self.mapWidth * self.cellSize)) / 2)
+        # Pen related.
+        self.penWall = wx.Pen("#4c4c4c", self.cellSize)
+        self.penWall.SetCap(wx.CAP_BUTT)
+        self.penPath = wx.Pen("#ababab", self.cellSize)
+        self.penPath.SetCap(wx.CAP_BUTT)
         # Icons related.
         self.diamonIcon = createBitmap(".\\test\\icons\\diamon.png", self.cellSize)
         self.pacman = []
@@ -216,6 +218,7 @@ class GameFrame(wx.Frame):
         super(GameFrame, self).__init__(*args, **kwargs)
         self.SetSize(WINDOW_WIDTH, WINDOW_HEIGHT)
         self.agent = None
+        self.old_position = None
         self.current_position = None
         self.maze_map = None
         self.monster_postions = None
@@ -223,19 +226,25 @@ class GameFrame(wx.Frame):
 
     def paint(self, newDirection):
         dc = wx.ClientDC(self)
-        dc.Clear()
-        pen = wx.Pen("#4c4c4c", self.maze_map.cellSize)
-        pen.SetCap(wx.CAP_BUTT)
-        dc.SetPen(pen)
         # draw map here
-        self.maze_map.drawBitmap(dc, self.maze_map.pacman[newDirection - 1], \
-                                 self.current_position.position[0], self.current_position.position[1])
         for i in range(self.maze_map.mapHeight):
             for j in range(self.maze_map.mapWidth):
                 if self.maze_map.map[i][j] == WALL:
+                    dc.SetPen(self.maze_map.penWall)
                     self.maze_map.drawCell(dc, i, j)
                 if self.maze_map.map[i][j] == FOOD:
+                    if self.current_position.position[0] == i and self.current_position.position[1] == j:
+                        dc.SetPen(self.maze_map.penPath)
+                        self.maze_map.drawCell(dc, i, j)
+                        continue
                     self.maze_map.drawBitmap(dc, self.maze_map.diamonIcon, i, j)
+
+        if type(self.old_position) == type(self.current_position):
+            dc.SetPen(self.maze_map.penPath)
+            self.maze_map.drawCell(dc, self.old_position.position[0], self.old_position.position[1])
+
+        self.maze_map.drawBitmap(dc, self.maze_map.pacman[newDirection - 1], \
+                                 self.current_position.position[0], self.current_position.position[1])
 
         for monster in self.monster_postions:
             self.maze_map.drawBitmap(dc, self.maze_map.ghost[0],
@@ -243,14 +252,14 @@ class GameFrame(wx.Frame):
 
     def start(self):
         while not self.agent.is_finished():
-            old_position = self.current_position
+            self.old_position = self.current_position
             self.current_position = self.agent.get_next_step()
             for position_index, monster_position in enumerate(self.monster_postions):
                 self.monster_postions[position_index].position = \
                     self.monster_agent[position_index].get_next_step()
 
 
-            newDirection = changeDirection(old_position, self.current_position)
+            newDirection = changeDirection(self.old_position, self.current_position)
             self.paint(newDirection)
             time.sleep(time_interval)
 
