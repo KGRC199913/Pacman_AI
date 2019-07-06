@@ -1,7 +1,8 @@
 # Algorithms.
+from math import sqrt
 
-from Node import *
-from Constants import *
+from node import *
+from constants import *
 
 
 # A-Star
@@ -39,7 +40,6 @@ class AStarAgent:
         return result
 
     @staticmethod
-    # find least f node for A*
     def __generate_childs(maze_map, monsters, current_node):
         childs = []
         x = current_node.position[0]
@@ -109,6 +109,102 @@ class AStarAgent:
                     continue
                 child.g = current_node.g + 1
                 child.h = AStarAgent.__manhattan_heuristic(child, end_node)
+                child.f = child.g + child.h
+
+                for node in open_list:
+                    if child == node and child.g > current_node.g:
+                        continue
+                open_list.append(child)
+
+    def is_finished(self):
+        return self.stepCount == len(self.path) - 1
+
+
+class AStarGhostAgent:
+    def __init__(self, maze_map, current_pos, pacman_pos):
+        self.map = maze_map
+
+        start_node = Node(position=current_pos)
+        end_node = Node(position=pacman_pos)
+
+        self.path = self.__a_star(self.map, start_node, end_node)
+        self.start_pos = current_pos
+        self.stepCount = -1
+
+    def get_next_step(self):
+        return self.path.pop(0)
+
+    @staticmethod
+    def __manhattan_heuristic(from_pos, to_pos):
+        x = abs(from_pos.position[0] - to_pos.position[0])
+        y = abs(from_pos.position[1] - to_pos.position[1])
+
+        distance: float = sqrt((x*x) + (y*y))
+        return distance
+
+    # find least f node for A*
+    @staticmethod
+    def __find_least_f(open_list):
+        result = open_list[0]
+        for a in open_list:
+            if a.f < result.f:
+                result = a
+        return result
+
+    @staticmethod
+    def __generate_childs(maze_map, current_node):
+        childs = []
+        x = current_node.position[0]
+        y = current_node.position[1]
+
+        child = maze_map[x][y + 1]
+        if (child is not WALL) or (child is FOOD):
+            childs.append(Node(parent=current_node,
+                               position=(x, y + 1)))
+
+        child = maze_map[x][y - 1]
+        if (child is not WALL) or (child is FOOD):
+            childs.append(Node(parent=current_node,
+                               position=(x, y - 1)))
+
+        child = maze_map[x + 1][y]
+        if (child is not WALL) or (child is FOOD):
+            childs.append(Node(parent=current_node,
+                               position=(x + 1, y)))
+
+        child = maze_map[x - 1][y]
+        if (child is not WALL) or (child is FOOD):
+            childs.append(Node(parent=current_node,
+                               position=(x - 1, y)))
+        return childs
+
+    @staticmethod
+    # a* search alg
+    def __a_star(maze_map, start_node, end_node):
+        open_list = []
+        closed_list = []
+        path = []
+
+        if start_node is not end_node:
+            open_list.append(start_node)
+
+        while len(open_list) > 0:
+            current_node = AStarGhostAgent.__find_least_f(open_list)
+            closed_list.append(open_list.pop(open_list.index(current_node)))
+
+            if current_node == end_node:
+                while current_node is not None:
+                    path.append(current_node)
+                    current_node = current_node.parent
+                return path[::-1]
+
+            childs = AStarGhostAgent.__generate_childs(maze_map, current_node)
+
+            for child in childs:
+                if child in closed_list:
+                    continue
+                child.g = current_node.g + 1
+                child.h = AStarGhostAgent.__manhattan_heuristic(child, end_node)
                 child.f = child.g + child.h
 
                 for node in open_list:

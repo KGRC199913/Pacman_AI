@@ -4,9 +4,9 @@ import time
 import wx
 from math import *
 
-from Node import *
-from Algorithms import *
-from Constants import *
+from node import *
+from algorithms import *
+from constants import *
 
 
 def read_map(map_name):
