@@ -97,6 +97,39 @@ class AStarAgent:
         return childs
 
     @staticmethod
+    def __pacman_scan(maze_map, current_node):
+        scans = []
+        x = current_node.position[0]
+        y = current_node.position[1]
+
+        scans.append(Node(position=(x - 1, y)))
+        scans.append(Node(position=(x - 2, y)))
+        scans.append(Node(position=(x - 3, y)))
+        scans.append(Node(position=(x + 1, y)))
+        scans.append(Node(position=(x + 2, y)))
+        scans.append(Node(position=(x + 3, y)))
+        scans.append(Node(position=(x, y - 1)))
+        scans.append(Node(position=(x, y - 2)))
+        scans.append(Node(position=(x, y - 3)))
+        scans.append(Node(position=(x, y + 1)))
+        scans.append(Node(position=(x, y + 2)))
+        scans.append(Node(position=(x, y + 3)))
+        scans.append(Node(position=(x + 1, y + 1)))
+        scans.append(Node(position=(x - 1, y - 1)))
+        scans.append(Node(position=(x - 1, y + 1)))
+        scans.append(Node(position=(x + 1, y - 1)))
+        scans.append(Node(position=(x - 1, y + 2)))
+        scans.append(Node(position=(x - 2, y + 1)))
+        scans.append(Node(position=(x + 1, y - 2)))
+        scans.append(Node(position=(x + 2, y - 1)))
+        scans.append(Node(position=(x + 1, y + 2)))
+        scans.append(Node(position=(x + 2, y + 1)))
+        scans.append(Node(position=(x - 1, y - 2)))
+        scans.append(Node(position=(x - 2, y - 1)))
+
+        return scans
+
+    @staticmethod
     def __find_food(maze_map):
         if maze_map is None:
             return None
@@ -147,6 +180,28 @@ class AStarAgent:
     def is_finished(self):
         return self.stepCount == len(self.path) - 1
 
+    @staticmethod
+    def __hill_climbing(maze_map, start_node, monster_positions, path):
+        scans = AStarAgent.__pacman_scan(maze_map, start_node)
+        min_distance = AStarAgent.__calc_distance(start_node, scans[0])
+        end_node = scans[0]
+        if end_node is None:
+            return path
+        while end_node is not None:
+            for i in range(len(scans)):
+                if AStarAgent.__calc_distance(start_node, scans[i]) < min_distance and scans[i] == FOOD:
+                    min_distance = AStarAgent.__calc_distance(start_node, scans[i])
+                    end_node = scans[i]
+            if end_node is not None:
+                path += AStarAgent.__a_star(maze_map, start_node, end_node, monster_positions)
+                AStarAgent.__hill_climbing(maze_map, end_node, monster_positions, path)
+            else:
+                start_node = (start_node.position[0] + 1, start_node.position[1])
+
+    @staticmethod
+    def __calc_distance(currend_node, end_node):
+        return sqrt((currend_node.position[0]- end_node.position[0])*(currend_node.position[0]- end_node.position[0])\
+                        + (currend_node.position[1]- end_node.position[1])*(currend_node.position[1]- end_node.position[1]))
 
 class Node:
     def __init__(self, parent=None, position=None):
