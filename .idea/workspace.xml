@@ -49,7 +49,7 @@
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6">
+  <component name="ProjectFrameBounds" extendedState="7">
     <option name="x" value="505" />
     <option name="y" value="-30" />
     <option name="width" value="1750" />
@@ -242,7 +242,7 @@
     <option name="totallyTimeSpent" value="18392000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-7" y="-7" width="1550" height="848" extended-state="6" />
+    <frame x="-7" y="-7" width="1550" height="974" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.3016086" />
@@ -250,7 +250,7 @@
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49932975" visible="true" weight="0.32894737" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49932975" visible="true" weight="0.23606168" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.3991228" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -475,9 +475,6 @@
         <state relative-caret-position="-347" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/colors.scheme.xml">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
     <entry file="file://$PROJECT_DIR$/test/maps/demo05.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="288">
@@ -485,12 +482,9 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../../AppData/Local/Programs/Python/Python37-32/Lib/threading.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="124">
-          <caret line="864" selection-start-line="864" selection-end-line="864" />
-        </state>
-      </provider>
+    <entry file="file://$PROJECT_DIR$/../../AppData/Local/Programs/Python/Python37-32/Lib/threading.py" />
+    <entry file="file://$PROJECT_DIR$/colors.scheme.xml">
+      <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file://$PROJECT_DIR$/test/maps/demo06.txt">
       <provider selected="true" editor-type-id="text-editor">

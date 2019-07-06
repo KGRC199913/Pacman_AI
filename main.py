@@ -29,6 +29,170 @@ def read_map(map_name):
     return maze_map, (x_pacman_pos, y_pacman_pos)
 
 
+class HillClimbing:
+    def __init__(self, maze_map, start_pos, monsters_list):
+        self.map = maze_map
+        self.monsters = None
+        if not monsters_list:
+            self.monsters = []
+        else:
+            self.monsters = monsters_list
+        start_node = Node(position=start_pos)
+
+        self.path = self.__hill_climbing(self.map, start_node, self.monsters)
+        self.start_pos = start_pos
+        self.stepCount = -1
+
+    def get_next_step(self):
+        self.stepCount += 1
+        return self.path[self.stepCount]
+
+
+    @staticmethod
+    def __manhattan_heuristic(from_pos, to_pos):
+        return abs(from_pos.position[0] - to_pos.position[0]) \
+               + abs(from_pos.position[1] - to_pos.position[1])
+
+    # find least f node for A*
+    @staticmethod
+    def __find_least_f(open_list):
+        result = open_list[0]
+        for a in open_list:
+            if a.f < result.f:
+                result = a
+        return result
+
+    @staticmethod
+    # find least f node for A*
+    def __generate_childs(maze_map, monsters, current_node):
+        childs = []
+        x = current_node.position[0]
+        y = current_node.position[1]
+        monster_positions = [monster.position for monster in monsters]
+
+        child = maze_map[x][y + 1]
+        if ((child == 0) or (child == 2)) and (child not in monster_positions):
+            childs.append(Node(parent=current_node,
+                               position=(x, y + 1)))
+
+        child = maze_map[x][y - 1]
+        if ((child == 0) or (child == 2)) and (child not in monster_positions):
+            childs.append(Node(parent=current_node,
+                               position=(x, y - 1)))
+
+        child = maze_map[x + 1][y]
+        if ((child == 0) or (child == 2)) and (child not in monster_positions):
+            childs.append(Node(parent=current_node,
+                               position=(x + 1, y)))
+
+        child = maze_map[x - 1][y]
+        if ((child == 0) or (child == 2)) and (child not in monster_positions):
+            childs.append(Node(parent=current_node,
+                               position=(x - 1, y)))
+        return childs
+
+    @staticmethod
+    def __pacman_scan(maze_map, current_node):
+        scans = []
+        x = current_node.position[0]
+        y = current_node.position[1]
+
+        scans.append(Node(position=(x - 1, y)))
+        scans.append(Node(position=(x - 2, y)))
+        scans.append(Node(position=(x - 3, y)))
+        scans.append(Node(position=(x + 1, y)))
+        scans.append(Node(position=(x + 2, y)))
+        scans.append(Node(position=(x + 3, y)))
+        scans.append(Node(position=(x, y - 1)))
+        scans.append(Node(position=(x, y - 2)))
+        scans.append(Node(position=(x, y - 3)))
+        scans.append(Node(position=(x, y + 1)))
+        scans.append(Node(position=(x, y + 2)))
+        scans.append(Node(position=(x, y + 3)))
+        scans.append(Node(position=(x + 1, y + 1)))
+        scans.append(Node(position=(x - 1, y - 1)))
+        scans.append(Node(position=(x - 1, y + 1)))
+        scans.append(Node(position=(x + 1, y - 1)))
+        scans.append(Node(position=(x - 1, y + 2)))
+        scans.append(Node(position=(x - 2, y + 1)))
+        scans.append(Node(position=(x + 1, y - 2)))
+        scans.append(Node(position=(x + 2, y - 1)))
+        scans.append(Node(position=(x + 1, y + 2)))
+        scans.append(Node(position=(x + 2, y + 1)))
+        scans.append(Node(position=(x - 1, y - 2)))
+        scans.append(Node(position=(x - 2, y - 1)))
+
+        return scans
+
+    @staticmethod
+    # a* search alg
+    def __a_star(maze_map, start_node, end_node, monster_positions):
+        open_list = []
+        closed_list = []
+        path = []
+        if monster_positions is None:
+            monster_positions = []
+
+        if start_node is not end_node:
+            open_list.append(start_node)
+
+        while len(open_list) > 0:
+            current_node = HillClimbing.__find_least_f(open_list)
+            closed_list.append(open_list.pop(open_list.index(current_node)))
+
+            if current_node == end_node:
+                while current_node is not None:
+                    path.append(current_node)
+                    current_node = current_node.parent
+                return path[::-1]
+
+            childs = HillClimbing.__generate_childs(maze_map, monster_positions, current_node)
+
+            for child in childs:
+                if child in closed_list:
+                    continue
+                child.g = current_node.g + 1
+                child.h = HillClimbing.__manhattan_heuristic(child, end_node)
+                child.f = child.g + child.h
+
+                if child in open_list:
+                    if child.g > current_node.g:
+                        continue
+                open_list.append(child)
+
+    def is_finished(self):
+        return
+
+    @staticmethod
+    def __hill_climbing(maze_map, start_node, monster_positions):
+        scans = HillClimbing.__pacman_scan(maze_map, start_node)
+        min_distance = HillClimbing.__calc_distance(start_node, scans[0])
+        end_node = scans[0]
+        if HillClimbing.check_finish(maze_map):
+            return
+        if end_node is None:
+            start_node = (start_node.position[0] + 1, start_node.position[1])
+        for i in range(len(scans)):
+            if HillClimbing.__calc_distance(start_node, scans[i]) < min_distance and scans[i] == FOOD:
+                min_distance = HillClimbing.__calc_distance(start_node, scans[i])
+                end_node = scans[i]
+        if end_node is not None:
+            HillClimbing.__hill_climbing(maze_map, end_node, monster_positions)
+            return HillClimbing.__a_star(maze_map, start_node, end_node, monster_positions)
+
+    @staticmethod
+    def __calc_distance(currend_node, end_node):
+        return sqrt((currend_node.position[0] - end_node.position[0])*(currend_node.position[0] - end_node.position[0])\
+                    + (currend_node.position[1] - end_node.position[1])*(currend_node.position[1] - end_node.position[1]))
+
+    @staticmethod
+    def check_finish(maze_map):
+        food = FOOD
+        if food in maze_map:
+            return False
+        return True
+
+
 class AStarAgent:
     def __init__(self, maze_map, start_pos, monsters_list):
         self.map = maze_map
@@ -397,7 +561,8 @@ if __name__ == '__main__':
         game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
         monster_positions = GameFrame.find_monster(map_matrix)
-        game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
+        # game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
+        game_frame.agent = HillClimbing(map_matrix, start_position, monster_positions)
         game_frame.monster_postions = monster_positions
         monster_agents = []
         # level 1 & 2:
