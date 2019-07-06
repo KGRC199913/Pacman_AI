@@ -270,7 +270,7 @@ class Monster:
 if __name__ == '__main__':
     try:
         app = wx.App()
-        map_matrix, start_position = read_map(".\\test\\maps\\demo01.txt")
+        map_matrix, start_position = read_map(".\\test\\maps\\demo05.txt")
         game_frame = GameFrame(None, title="Test")
         game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
