@@ -23,10 +23,10 @@ def read_map(map_name):
     map_file.close()
     del lines[0]
     x_pacman_pos, y_pacman_pos = [int(x)
-                                  for x in lines[len(lines) - 1].split(' ')]
+                                  for x in lines[len(lines) - 1].split(" ")]
     del lines[-1]
     for line in lines:
-        maze_map.append([int(x) for x in line.split(' ')])
+        maze_map.append([int(x) for x in line.split(" ")])
 
     return maze_map, (x_pacman_pos, y_pacman_pos)
 
