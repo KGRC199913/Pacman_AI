@@ -1,5 +1,7 @@
+import copy
 import threading
 import time
+from random import randrange
 
 import wx
 from math import *
@@ -23,10 +25,10 @@ def read_map(map_name):
     map_file.close()
     del lines[0]
     x_pacman_pos, y_pacman_pos = [int(x)
-                                  for x in lines[len(lines) - 1].split(' ')]
+                                  for x in lines[len(lines) - 1].split(" ")]
     del lines[-1]
     for line in lines:
-        maze_map.append([int(x) for x in line.split(' ')])
+        maze_map.append([int(x) for x in line.split(" ")])
 
     return maze_map, (x_pacman_pos, y_pacman_pos)
 
@@ -137,8 +139,8 @@ class AStarAgent:
                 child.h = AStarAgent.__manhattan_heuristic(child, end_node)
                 child.f = child.g + child.h
 
-                if child in open_list:
-                    if child.g > current_node.g:
+                for node in open_list:
+                    if child == node and child.g > current_node.g:
                         continue
                 open_list.append(child)
 
@@ -216,7 +218,8 @@ class GameFrame(wx.Frame):
         self.agent = None
         self.current_position = None
         self.maze_map = None
-        self.monster_postion = None
+        self.monster_postions = None
+        self.monster_agent = None
 
     def paint(self, newDirection):
         dc = wx.ClientDC(self)
@@ -225,8 +228,8 @@ class GameFrame(wx.Frame):
         pen.SetCap(wx.CAP_BUTT)
         dc.SetPen(pen)
         # draw map here
-        self.maze_map.drawBitmap(dc, self.maze_map.pacman[newDirection - 1],\
-            self.current_position.position[0], self.current_position.position[1])
+        self.maze_map.drawBitmap(dc, self.maze_map.pacman[newDirection - 1], \
+                                 self.current_position.position[0], self.current_position.position[1])
         for i in range(self.maze_map.mapHeight):
             for j in range(self.maze_map.mapWidth):
                 if self.maze_map.map[i][j] == WALL:
@@ -234,14 +237,19 @@ class GameFrame(wx.Frame):
                 if self.maze_map.map[i][j] == FOOD:
                     self.maze_map.drawBitmap(dc, self.maze_map.diamonIcon, i, j)
 
-        for monster in self.monster_postion:
-            self.maze_map.drawBitmap(dc, self.maze_map.ghost[0],\
-                monster.position[0], monster.position[1])
+        for monster in self.monster_postions:
+            self.maze_map.drawBitmap(dc, self.maze_map.ghost[0],
+                                     monster.position[0], monster.position[1])
 
     def start(self):
         while not self.agent.is_finished():
             old_position = self.current_position
             self.current_position = self.agent.get_next_step()
+            for position_index, monster_position in enumerate(self.monster_postions):
+                self.monster_postions[position_index].position = \
+                    self.monster_agent[position_index].get_next_step()
+
+
             newDirection = changeDirection(old_position, self.current_position)
             self.paint(newDirection)
             time.sleep(time_interval)
@@ -267,16 +275,74 @@ class Monster:
         self.obj_under = 0
 
 
+class StandStillAgent:
+    def __init__(self, maze_map):
+        self.start_position = None
+
+    def get_next_step(self):
+        return self.start_position
+
+
+class RandomAroundInitialAgent:
+    def __init__(self, maze_map):
+        self.maze_map = maze_map
+        self.start_position = None
+        self.current_position = None
+
+    def get_next_step(self):
+        if self.current_position != self.start_position:
+            self.current_position = self.start_position
+        else:
+            random_number = randrange(0, 3, 1)
+            coor = None
+            if random_number == 0:
+                coor = (self.start_position[0] + 1, self.start_position[1])
+                if self.maze_map[coor[0]][coor[1]] != 1:
+                    self.current_position = coor
+
+            if random_number == 1:
+                coor = (self.start_position[0] - 1, self.start_position[1])
+                if self.maze_map[coor[0]][coor[1]] != 1:
+                    self.current_position = coor
+
+            if random_number == 2:
+                coor = (self.start_position[0], self.start_position[1] + 1)
+                if self.maze_map[coor[0]][coor[1]] != 1:
+                    self.current_position = coor
+
+            if random_number == 3:
+                coor = (self.start_position[0], self.start_position[1] - 1)
+                if self.maze_map[coor[0]][coor[1]] != 1:
+                    self.current_position = coor
+
+        return self.current_position
+
+
 if __name__ == '__main__':
     try:
         app = wx.App()
-        map_matrix, start_position = read_map(".\\test\\maps\\demo02.txt")
+        map_matrix, start_position = read_map(".\\test\\maps\\demo05.txt")
         game_frame = GameFrame(None, title="Test")
         game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
         monster_positions = GameFrame.find_monster(map_matrix)
         game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
-        game_frame.monster_postion = monster_positions
+        game_frame.monster_postions = monster_positions
+        monster_agents = []
+        # level 1 & 2:
+        # for i in range(len(monster_positions)):
+        #     agent = StandStillAgent(maze_map=map_matrix)
+        #     agent.start_position = monster_positions[i].position
+        #     monster_agents.append(agent)
+
+        # level 3
+        for i in range(len(monster_positions)):
+            agent = RandomAroundInitialAgent(maze_map=map_matrix)
+            agent.start_position = monster_positions[i].position
+            agent.current_position = copy.deepcopy(agent.start_position)
+            monster_agents.append(agent)
+
+        game_frame.monster_agent = monster_agents
         game_frame.Show()
         thread = threading.Thread(target=game_frame.start)
         thread.start()
