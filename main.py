@@ -169,10 +169,12 @@ class Map:
         self.map = maze_map
         self.mapWidth = len(maze_map[0])
         self.mapHeight = len(maze_map)
+        self.startDrawPos = None
         self.cellSize = floor(WINDOW_WIDTH / self.mapWidth)
+        self.startDrawPos = Node(parent = None, position = (0, floor((WINDOW_HEIGHT - (self.mapHeight * self.cellSize)) / 2)))
         if self.cellSize > floor(WINDOW_HEIGHT / self.mapHeight):
             self.cellSize = floor(WINDOW_HEIGHT / self.mapHeight)
-        self.startDrawPos = floor((WINDOW_WIDTH - (self.mapWidth * self.cellSize)) / 2)
+            self.startDrawPos = Node(parent = None, position = (floor((WINDOW_WIDTH - (self.mapWidth * self.cellSize)) / 2), 0))
         # Pen related.
         self.penWall = wx.Pen("#4c4c4c", self.cellSize)
         self.penWall.SetCap(wx.CAP_BUTT)
@@ -190,12 +192,12 @@ class Map:
         self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png", self.cellSize))
 
     def drawCell(self, clientDC, x_pos, y_pos):
-        clientDC.DrawLine(self.startDrawPos + self.cellSize * y_pos, self.cellSize * x_pos, \
-                          self.startDrawPos + self.cellSize * y_pos + self.cellSize, self.cellSize * x_pos)
+        clientDC.DrawLine(self.startDrawPos.position[0] + self.cellSize * y_pos, self.startDrawPos.position[1] + self.cellSize * x_pos, \
+                          self.startDrawPos.position[0] + self.cellSize * y_pos + self.cellSize, self.startDrawPos.position[1] + self.cellSize * x_pos)
 
     def drawBitmap(self, clientDC, bitmap, x_pos, y_pos):
-        clientDC.DrawBitmap(bitmap, self.startDrawPos + self.cellSize * y_pos, \
-                            self.cellSize * x_pos - floor(self.cellSize / 2), True)
+        clientDC.DrawBitmap(bitmap, self.startDrawPos.position[0] + self.cellSize * y_pos, \
+                            self.startDrawPos.position[1] + self.cellSize * x_pos - floor(self.cellSize / 2), True)
 
 
 def changeDirection(old_position, current_position):
