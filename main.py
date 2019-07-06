@@ -3,6 +3,7 @@ import time
 from math import *
 from random import randrange
 
+from algorithms import *
 import wx
 
 # Constains
@@ -601,20 +602,22 @@ class RandomAroundInitialAgent:
 if __name__ == '__main__':
     try:
         app = wx.App()
-        map_matrix, start_position = read_map(".\\test\\maps\\demo06.txt")
+        map_matrix, start_position = read_map(".\\test\\maps\\demo01.txt")
         game_frame = GameFrame(None, title="Test")
         game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
         monster_positions = GameFrame.find_monster(map_matrix)
-        game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
-        # game_frame.agent = HillClimbing(map_matrix, start_position, monster_positions)
+        #game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
+        #game_frame.agent = HillClimbing(map_matrix, start_position, monster_positions)
+        #game_frame.agent = AStarFlexPacmanAgent(map_matrix, start_position, monster_positions)
+
         game_frame.monster_positions = monster_positions
         monster_agents = []
         # level 1 & 2:
-        # for i in range(len(monster_positions)):
-        #     agent = StandStillAgent(maze_map=map_matrix)
-        #     agent.start_position = monster_positions[i].position
-        #     monster_agents.append(agent)
+        for i in range(len(monster_positions)):
+             agent = StandStillAgent(maze_map=map_matrix)
+             agent.start_position = monster_positions[i].position
+             monster_agents.append(agent)
 
         # level 3
         # for i in range(len(monster_positions)):
@@ -624,10 +627,14 @@ if __name__ == '__main__':
         #     monster_agents.append(agent)
 
         # level 4
-        for i in range(len(monster_positions)):
-            agent = AStarGhostAgent(maze_map=map_matrix)
-            agent.start_position = monster_positions[i].position
-            monster_agents.append(agent)
+        #for i in range(len(monster_positions)):
+        #    agent = AStarGhostAgent(maze_map=map_matrix)
+        #    agent.start_position = monster_positions[i].position
+        #    monster_agents.append(agent)
+
+        # Pacman Agent
+        game_frame.agent = AStarFlexPacmanAgent(map_matrix, start_position,monster_positions)
+        #game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
 
         game_frame.monster_agent = monster_agents
         game_frame.Show()
