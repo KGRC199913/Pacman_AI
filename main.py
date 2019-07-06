@@ -4,16 +4,9 @@ import time
 import wx
 from math import *
 
-# Constains
-WINDOW_HEIGHT = 600
-WINDOW_WIDTH = 800
-WALL = 1
-FOOD = 2
-MONSTER = 3
-time_interval = 0.2
-
-# Global variables
-MAZE_MAP = None
+from Node import *
+from Algorithms import *
+from Constants import *
 
 
 def read_map(map_name):
@@ -29,132 +22,6 @@ def read_map(map_name):
         maze_map.append([int(x) for x in line.split(" ")])
 
     return maze_map, (x_pacman_pos, y_pacman_pos)
-
-
-class AStarAgent:
-    def __init__(self, maze_map, start_pos, monsters_list):
-        self.map = maze_map
-        self.monsters = None
-        if not monsters_list:
-            self.monsters = []
-        else:
-            self.monsters = monsters_list
-        start_node = Node(position=start_pos)
-        end_node = Node(position=AStarAgent.__find_food(maze_map))
-
-        self.path = self.__a_star(self.map, start_node, end_node, self.monsters)
-        self.start_pos = start_pos
-        self.stepCount = -1
-
-    def get_next_step(self):
-        self.stepCount += 1
-        return self.path[self.stepCount]
-
-    @staticmethod
-    def __manhattan_heuristic(from_pos, to_pos):
-        return abs(from_pos.position[0] - to_pos.position[0]) \
-               + abs(from_pos.position[1] - to_pos.position[1])
-
-    # find least f node for A*
-    @staticmethod
-    def __find_least_f(open_list):
-        result = open_list[0]
-        for a in open_list:
-            if a.f < result.f:
-                result = a
-        return result
-
-    @staticmethod
-    # find least f node for A*
-    def __generate_childs(maze_map, monsters, current_node):
-        childs = []
-        x = current_node.position[0]
-        y = current_node.position[1]
-        monster_positions = [monster.position for monster in monsters]
-
-        child = maze_map[x][y + 1]
-        if ((child == 0) or (child == 2)) and ((x, y + 1) not in monster_positions):
-            childs.append(Node(parent=current_node,
-                               position=(x, y + 1)))
-
-        child = maze_map[x][y - 1]
-        if ((child == 0) or (child == 2)) and ((x, y - 1) not in monster_positions):
-            childs.append(Node(parent=current_node,
-                               position=(x, y - 1)))
-
-        child = maze_map[x + 1][y]
-        if ((child == 0) or (child == 2)) and ((x + 1, y) not in monster_positions):
-            childs.append(Node(parent=current_node,
-                               position=(x + 1, y)))
-
-        child = maze_map[x - 1][y]
-        if ((child == 0) or (child == 2)) and ((x - 1, y) not in monster_positions):
-            childs.append(Node(parent=current_node,
-                               position=(x - 1, y)))
-
-        return childs
-
-    @staticmethod
-    def __find_food(maze_map):
-        if maze_map is None:
-            return None
-        height = len(maze_map)
-        width = len(maze_map[0])
-        for i in range(height):
-            for j in range(width):
-                if maze_map[i][j] == FOOD:
-                    return i, j
-        return None
-
-    @staticmethod
-    # a* search alg
-    def __a_star(maze_map, start_node, end_node, monster_positions):
-        open_list = []
-        closed_list = []
-        path = []
-        if monster_positions is None:
-            monster_positions = []
-
-        if start_node is not end_node:
-            open_list.append(start_node)
-
-        while len(open_list) > 0:
-            current_node = AStarAgent.__find_least_f(open_list)
-            closed_list.append(open_list.pop(open_list.index(current_node)))
-
-            if current_node == end_node:
-                while current_node is not None:
-                    path.append(current_node)
-                    current_node = current_node.parent
-                return path[::-1]
-
-            childs = AStarAgent.__generate_childs(maze_map, monster_positions, current_node)
-
-            for child in childs:
-                if child in closed_list:
-                    continue
-                child.g = current_node.g + 1
-                child.h = AStarAgent.__manhattan_heuristic(child, end_node)
-                child.f = child.g + child.h
-
-                for node in open_list:
-                    if child == node and child.g > current_node.g:
-                        continue
-                open_list.append(child)
-
-    def is_finished(self):
-        return self.stepCount == len(self.path) - 1
-
-
-class Node:
-    def __init__(self, parent=None, position=None):
-        self.parent = parent
-        self.position = position
-
-        self.g = self.h = self.f = 0
-
-    def __eq__(self, other):
-        return self.position == other.position
 
 
 def createBitmap(path, cellSize):
@@ -186,7 +53,7 @@ class Map:
         self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png", self.cellSize))
 
     def drawCell(self, clientDC, x_pos, y_pos):
-        clientDC.DrawLine(self.startDrawPos + self.cellSize * y_pos, self.cellSize * x_pos, \
+        clientDC.DrawLine(self.startDrawPos + self.cellSize * y_pos, self.cellSize * x_pos,
                           self.startDrawPos + self.cellSize * y_pos + self.cellSize, self.cellSize * x_pos)
 
     def drawBitmap(self, clientDC, bitmap, x_pos, y_pos):
@@ -225,8 +92,8 @@ class GameFrame(wx.Frame):
         pen.SetCap(wx.CAP_BUTT)
         dc.SetPen(pen)
         # draw map here
-        self.maze_map.drawBitmap(dc, self.maze_map.pacman[newDirection - 1],\
-            self.current_position.position[0], self.current_position.position[1])
+        self.maze_map.drawBitmap(dc, self.maze_map.pacman[newDirection - 1], \
+                                 self.current_position.position[0], self.current_position.position[1])
         for i in range(self.maze_map.mapHeight):
             for j in range(self.maze_map.mapWidth):
                 if self.maze_map.map[i][j] == WALL:
@@ -235,8 +102,8 @@ class GameFrame(wx.Frame):
                     self.maze_map.drawBitmap(dc, self.maze_map.diamonIcon, i, j)
 
         for monster in self.monster_postion:
-            self.maze_map.drawBitmap(dc, self.maze_map.ghost[0],\
-                monster.position[0], monster.position[1])
+            self.maze_map.drawBitmap(dc, self.maze_map.ghost[0], \
+                                     monster.position[0], monster.position[1])
 
     def start(self):
         while not self.agent.is_finished():
