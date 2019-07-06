@@ -1,4 +1,3 @@
-import copy
 import threading
 import time
 from random import randrange
@@ -47,6 +46,8 @@ class AStarAgent:
 
     def get_next_step(self):
         self.stepCount += 1
+        if self.path is None:
+            return Node(position=self.start_pos)
         return self.path[self.stepCount]
 
     @staticmethod
@@ -175,6 +176,8 @@ class AStarAgent:
                 open_list.append(child)
 
     def is_finished(self):
+        if self.path is None:
+            return True
         return self.stepCount == len(self.path) - 1
 
     @staticmethod
@@ -197,8 +200,9 @@ class AStarAgent:
 
     @staticmethod
     def __calc_distance(currend_node, end_node):
-        return sqrt((currend_node.position[0]- end_node.position[0])*(currend_node.position[0]- end_node.position[0])\
-                        + (currend_node.position[1]- end_node.position[1])*(currend_node.position[1]- end_node.position[1]))
+        return sqrt(
+            (currend_node.position[0] - end_node.position[0]) * (currend_node.position[0] - end_node.position[0]) \
+            + (currend_node.position[1] - end_node.position[1]) * (currend_node.position[1] - end_node.position[1]))
 
 class Node:
     def __init__(self, parent=None, position=None):
@@ -308,16 +312,17 @@ class GameFrame(wx.Frame):
                                      monster.position[0], monster.position[1])
 
     def start(self):
-        while not self.agent.is_finished():
+        while True:
             self.old_position = self.current_position
             self.current_position = self.agent.get_next_step()
             for position_index, monster_position in enumerate(self.monster_postions):
                 self.monster_postions[position_index].position = \
                     self.monster_agent[position_index].get_next_step()
 
-
             newDirection = changeDirection(self.old_position, self.current_position)
             self.paint(newDirection)
+            if self.agent.is_finished():
+                break
             time.sleep(time_interval)
 
     @staticmethod
@@ -387,7 +392,7 @@ class RandomAroundInitialAgent:
 if __name__ == '__main__':
     try:
         app = wx.App()
-        map_matrix, start_position = read_map(".\\test\\maps\\demo05.txt")
+        map_matrix, start_position = read_map(".\\test\\maps\\demo06.txt")
         game_frame = GameFrame(None, title="Test")
         game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
@@ -396,17 +401,17 @@ if __name__ == '__main__':
         game_frame.monster_postions = monster_positions
         monster_agents = []
         # level 1 & 2:
-        # for i in range(len(monster_positions)):
-        #     agent = StandStillAgent(maze_map=map_matrix)
-        #     agent.start_position = monster_positions[i].position
-        #     monster_agents.append(agent)
+        for i in range(len(monster_positions)):
+            agent = StandStillAgent(maze_map=map_matrix)
+            agent.start_position = monster_positions[i].position
+            monster_agents.append(agent)
 
         # level 3
-        for i in range(len(monster_positions)):
-            agent = RandomAroundInitialAgent(maze_map=map_matrix)
-            agent.start_position = monster_positions[i].position
-            agent.current_position = copy.deepcopy(agent.start_position)
-            monster_agents.append(agent)
+        # for i in range(len(monster_positions)):
+        #     agent = RandomAroundInitialAgent(maze_map=map_matrix)
+        #     agent.start_position = monster_positions[i].position
+        #     agent.current_position = copy.deepcopy(agent.start_position)
+        #     monster_agents.append(agent)
 
         game_frame.monster_agent = monster_agents
         game_frame.Show()
