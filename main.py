@@ -451,6 +451,8 @@ class Map:
         self.pacman.append(createBitmap(".\\test\\icons\\pacman4.png", self.cellSize))
         self.ghost = []
         self.ghost.append(createBitmap(".\\test\\icons\\ghost1.png", self.cellSize))
+        self.ghost.append(createBitmap(".\\test\\icons\\ghost1.png", self.cellSize))
+        self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png", self.cellSize))
         self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png", self.cellSize))
 
     def drawCell(self, clientDC, x_pos, y_pos):
@@ -465,7 +467,7 @@ class Map:
 
 
 def changeDirection(old_position, current_position):
-    if type(old_position) != type(current_position):
+    if type(old_position) is tuple:
         return 0
     if old_position.position[1] == current_position.position[1]:
         if old_position.position[0] < current_position.position[0]:
@@ -513,7 +515,13 @@ class GameFrame(wx.Frame):
                                  self.current_position.position[0], self.current_position.position[1])
 
         for monster in self.monster_positions:
-            self.maze_map.drawBitmap(dc, self.maze_map.ghost[0],
+            if type(monster.old_position) is not tuple or\
+            type(monster.old_position) is not None:
+                dc.SetPen(self.maze_map.penPath)
+                self.maze_map.drawCell(dc, monster.old_position[0], monster.old_position[1])
+            monster_direction = changeDirection(Node(position = (monster.old_position[0], monster.old_position[1])),\
+                Node(position = (monster.position[0], monster.position[1])))
+            self.maze_map.drawBitmap(dc, self.maze_map.ghost[monster_direction - 1],
                                      monster.position[0], monster.position[1])
 
     def start(self):
@@ -525,6 +533,8 @@ class GameFrame(wx.Frame):
                     self.monster_agent[position_index].start_node =\
                         Node(position=self.monster_positions[position_index].position)
                     self.monster_agent[position_index].end_node = self.current_position
+                self.monster_positions[position_index].old_position =\
+                    self.monster_positions[position_index].position
                 self.monster_positions[position_index].position =\
                     self.monster_agent[position_index].get_next_step()
 
@@ -551,7 +561,9 @@ class GameFrame(wx.Frame):
 
 class Monster:
     def __init__(self, position):
+        self.old_position = None
         self.position = position
+        self.direction = None
         self.obj_under = 0
 
 
