@@ -1,6 +1,7 @@
 import copy
 import threading
 import time
+import random
 from random import randrange
 
 import wx
@@ -43,14 +44,48 @@ class HillClimbing:
             self.monsters = monsters_list
         start_node = Node(position=start_pos)
 
-        self.path = self.__hill_climbing(self.map, start_node, self.monsters)
-        self.start_pos = start_pos
-        self.stepCount = -1
+        self.start_node = None
+        self.end_node = None
 
     def get_next_step(self):
-        self.stepCount += 1
-        return self.path[self.stepCount]
 
+        scans = HillClimbing.__pacman_scan(self.map, self.start_node)
+        min_distance = HillClimbing.__calc_distance(self.start_node, scans[0])
+
+        for i in range(len(scans)):
+            if HillClimbing.__calc_distance(self.start_node, scans[i]) < min_distance and scans[i] == FOOD:
+                min_distance = HillClimbing.__calc_distance(self.start_node, scans[i])
+                temp = scans[i]
+        if self.end_node is None and temp is not None:
+            self.end_node = temp
+        if self.end_node is None and temp is None:
+            rd = HillClimbing.random_pos(self.end_node)
+            while self.end_node == WALL:
+                rd = HillClimbing.random_pos(self.end_node)
+            self.end_node = rd
+
+        path = HillClimbing.__a_star(self.map, self.start_node, self.end_node, self.monsters)
+        if path[1] == FOOD:
+            self.end_node = None
+        return path[1]
+
+    @staticmethod
+    def random_pos(node):
+        rd_xy = random.random(0, 1)
+        rd_1 = random.random(-1, 1)
+        if rd_1 != 0:
+            rd_2 = 0
+        else:
+            rd_2 = random.random(-1, 1)
+        if rd_xy == 0:
+            pos = (node.position[0] + rd_1, node.position[1] + rd_2)
+        else:
+            pos = (node.position[0] + rd_2, node.position[1] + rd_1)
+        return pos
+
+    def is_finished(self):
+        food = FOOD
+        return food not in self.map
 
     @staticmethod
     def __manhattan_heuristic(from_pos, to_pos):
@@ -164,37 +199,12 @@ class HillClimbing:
                         continue
                 open_list.append(child)
 
-    def is_finished(self):
-        return
 
-    @staticmethod
-    def __hill_climbing(maze_map, start_node, monster_positions):
-        scans = HillClimbing.__pacman_scan(maze_map, start_node)
-        min_distance = HillClimbing.__calc_distance(start_node, scans[0])
-        end_node = scans[0]
-        if HillClimbing.check_finish(maze_map):
-            return
-        if end_node is None:
-            start_node = (start_node.position[0] + 1, start_node.position[1])
-        for i in range(len(scans)):
-            if HillClimbing.__calc_distance(start_node, scans[i]) < min_distance and scans[i] == FOOD:
-                min_distance = HillClimbing.__calc_distance(start_node, scans[i])
-                end_node = scans[i]
-        if end_node is not None:
-            HillClimbing.__hill_climbing(maze_map, end_node, monster_positions)
-            return HillClimbing.__a_star(maze_map, start_node, end_node, monster_positions)
 
     @staticmethod
     def __calc_distance(currend_node, end_node):
         return sqrt((currend_node.position[0] - end_node.position[0])*(currend_node.position[0] - end_node.position[0])\
                     + (currend_node.position[1] - end_node.position[1])*(currend_node.position[1] - end_node.position[1]))
-
-    @staticmethod
-    def check_finish(maze_map):
-        food = FOOD
-        if food in maze_map:
-            return False
-        return True
 
 
 class AStarAgent:
@@ -309,7 +319,7 @@ class AStarAgent:
                 open_list.append(child)
 
     def is_finished(self):
-        return self.stepCount == len(self.path) - 1
+        return self.stepCount == self.path[self.map] - 1
 
 
 class Node:
@@ -406,7 +416,7 @@ class GameFrame(wx.Frame):
                                      monster.position[0], monster.position[1])
 
     def start(self):
-        while not self.agent.check_finish(self.maze_map):
+        while not self.agent.is_finished():
             old_position = self.current_position
             self.current_position = self.agent.get_next_step()
             for position_index, monster_position in enumerate(self.monster_postions):
