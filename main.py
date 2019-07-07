@@ -669,7 +669,7 @@ def StartGame(level = 0):
     try:
         if level == 0:
             return None
-        map_matrix, start_position = read_map(".\\maps\\demo0{}.txt".format(randint(1,6)))
+        map_matrix, start_position = read_map(".\\maps\\level0{0}\\demo0{1}.txt".format(level, randint(1,6)))
         game_frame = GameFrame(None, title="Test", style=wx.DEFAULT_FRAME_STYLE ^\
             wx.RESIZE_BORDER ^ wx.MAXIMIZE_BOX)
         monster_positions = GameFrame.find_monster(map_matrix)
