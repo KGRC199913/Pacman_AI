@@ -570,9 +570,6 @@ class GameFrame(wx.Frame):
 
     def start(self):
         while True:
-            # Update agent postion.
-            self.old_position = self.current_position
-            self.current_position = self.agent.get_next_step()
             # Update each monster agent position.
             for position_index, monster_position in enumerate(self.monster_positions):
                 if type(self.monster_agent[position_index]) is AStarGhostAgent:
@@ -585,9 +582,12 @@ class GameFrame(wx.Frame):
                 self.monster_positions[position_index].position = \
                     self.monster_agent[position_index].get_next_step()
                 # Check colission.
-
                 if self.isHit(self.old_position, self.monster_positions[position_index].old_position):
                     return None
+
+            # Update agent postion.
+            self.old_position = self.current_position
+            self.current_position = self.agent.get_next_step()
 
             # Change agent's direction.
             newDirection = changeDirection(self.old_position, self.current_position)
@@ -675,8 +675,8 @@ def StartGame(level = 0):
         monster_positions = GameFrame.find_monster(map_matrix)
         game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
-        game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
-        # game_frame.agent = AStarFlexPacmanAgent(map_matrix, start_position, monster_positions)
+        # game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
+        game_frame.agent = AStarFlexPacmanAgent(map_matrix, start_position, monster_positions)
         # game_frame.agent = HillClimbing(map_matrix, start_position, monster_positions)
         game_frame.monster_positions = monster_positions
         monster_agents = []
