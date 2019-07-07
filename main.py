@@ -330,7 +330,6 @@ class GameFrame(wx.Frame):
                         self.score += 20
                         continue
                     self.maze_map.drawBitmap(dc, self.maze_map.diamonIcon, i, j)
-                    self.score -= 1
 
         if type(self.old_position) == type(self.current_position):
             dc.SetPen(self.maze_map.penPath)
@@ -377,6 +376,8 @@ class GameFrame(wx.Frame):
                 self.agent.monsters = self.monster_positions
             self.old_position = self.current_position
             self.current_position = self.agent.get_next_step()
+            if self.old_position != self.current_position:
+                self.score -= 1
 
             # Change agent's direction.
             newDirection = changeDirection(self.old_position, self.current_position)
