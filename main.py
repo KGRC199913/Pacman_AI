@@ -3,6 +3,7 @@ import time
 from math import *
 from random import randrange, random
 
+from algorithms import *
 import wx
 
 # Constants
@@ -662,6 +663,7 @@ def StartGame(level = 0):
         game_frame.current_position = start_position
         monster_positions = GameFrame.find_monster(map_matrix)
         # game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
+        # game_frame.agent = AStarFlexPacmanAgent(map_matrix, start_position, monster_positions)
         game_frame.agent = HillClimbing(map_matrix, start_position, monster_positions)
         game_frame.monster_positions = monster_positions
         monster_agents = []
@@ -683,6 +685,10 @@ def StartGame(level = 0):
                 agent = AStarGhostAgent(maze_map=map_matrix)
                 agent.start_position = monster_positions[i].position
                 monster_agents.append(agent)
+
+        # Pacman Agent
+        game_frame.agent = AStarFlexPacmanAgent(map_matrix, start_position,monster_positions)
+        #game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
 
         game_frame.monster_agent = monster_agents
         game_frame.Show()
