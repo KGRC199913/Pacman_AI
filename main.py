@@ -8,7 +8,6 @@ import wx
 # Constains
 WINDOW_HEIGHT = 600
 WINDOW_WIDTH = 800
-PADDING = 20
 WALL = 1
 FOOD = 2
 MONSTER = 3
