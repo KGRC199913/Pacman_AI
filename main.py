@@ -8,6 +8,11 @@ import wx
 # Constants
 WINDOW_HEIGHT = 600
 WINDOW_WIDTH = 800
+MENU_HEIGHT = 450
+MENU_WIDTH = 300
+BUTTON_HEIGHT = 25
+BUTTON_WIDTH = 100
+BUTTON_PADDING = 5
 WALL = 1
 FOOD = 2
 MONSTER = 3
@@ -544,6 +549,11 @@ class GameFrame(wx.Frame):
             self.maze_map.drawBitmap(dc, self.maze_map.ghost[monster_direction - 1],
                                      monster.position[0], monster.position[1])
 
+    def isHit(self, pacman_pos, monster_pos):
+        if type(pacman_pos) is Node and type(monster_pos) is Node and pacman_pos == monster_pos:
+            return True
+        return False
+
     def start(self):
         while True:
             # Update agent postion.
@@ -561,9 +571,8 @@ class GameFrame(wx.Frame):
                 self.monster_positions[position_index].position = \
                     self.monster_agent[position_index].get_next_step()
                 # Check colission.
-                if type(self.old_position) is Node and \
-                        type(self.monster_positions[position_index].old_position) is Node and \
-                        self.old_position == self.monster_positions[position_index].old_position:
+
+                if self.isHit(self.old_position, self.monster_positions[position_index].old_position):
                     return None
 
             # Change agent's direction.
@@ -642,16 +651,13 @@ class RandomAroundInitialAgent:
         return self.current_position
 
 
-class MenuFrame(wx.Frame):
-    def __init__(self, *args, **kwargs):
-        super(MenuFrame, self).__init__(*args, **kwargs)
-
-
-if __name__ == '__main__':
+def StartGame(level = 0):
     try:
-        app = wx.App()
+        if level == 0:
+            return None
         map_matrix, start_position = read_map(".\\test\\maps\\demo06.txt")
-        game_frame = GameFrame(None, title="Test", style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
+        game_frame = GameFrame(None, title="Test", style=wx.DEFAULT_FRAME_STYLE ^\
+            wx.RESIZE_BORDER ^ wx.MAXIMIZE_BOX)
         game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
         monster_positions = GameFrame.find_monster(map_matrix)
@@ -659,29 +665,69 @@ if __name__ == '__main__':
         game_frame.agent = HillClimbing(map_matrix, start_position, monster_positions)
         game_frame.monster_positions = monster_positions
         monster_agents = []
-        # level 1 & 2:
-        # for i in range(len(monster_positions)):
-        #     agent = StandStillAgent(maze_map=map_matrix)
-        #     agent.start_position = monster_positions[i].position
-        #     monster_agents.append(agent)
+        if level == 1 or level == 2:
+            for i in range(len(monster_positions)):
+                agent = StandStillAgent(maze_map=map_matrix)
+                agent.start_position = monster_positions[i].position
+                monster_agents.append(agent)
 
-        # level 3
-        # for i in range(len(monster_positions)):
-        #     agent = RandomAroundInitialAgent(maze_map=map_matrix)
-        #     agent.start_position = monster_positions[i].position
-        #     agent.current_position = copy.deepcopy(agent.start_position)
-        #     monster_agents.append(agent)
+        if level == 3:
+            for i in range(len(monster_positions)):
+                agent = RandomAroundInitialAgent(maze_map=map_matrix)
+                agent.start_position = monster_positions[i].position
+                agent.current_position = copy.deepcopy(agent.start_position)
+                monster_agents.append(agent)
 
-        # level 4
-        for i in range(len(monster_positions)):
-            agent = AStarGhostAgent(maze_map=map_matrix)
-            agent.start_position = monster_positions[i].position
-            monster_agents.append(agent)
+        if level == 4:
+            for i in range(len(monster_positions)):
+                agent = AStarGhostAgent(maze_map=map_matrix)
+                agent.start_position = monster_positions[i].position
+                monster_agents.append(agent)
 
         game_frame.monster_agent = monster_agents
         game_frame.Show()
         thread = threading.Thread(target=game_frame.start)
         thread.start()
+    except RuntimeError:
+        pass
+
+
+class MenuFrame(wx.Frame):
+    def __init__(self, *args, **kwargs):
+        super(MenuFrame, self).__init__(*args, **kwargs)
+        self.SetSize(MENU_WIDTH, MENU_HEIGHT)
+        self.Show()
+        self.level = None
+
+        dc = wx.ClientDC(self)
+
+        bitmap = wx.Bitmap(".\\test\\icons\\logo.png")
+        img = bitmap.ConvertToImage()
+        img = img.Scale(280, 73, wx.IMAGE_QUALITY_HIGH)
+        bitmap = wx.Bitmap(img)
+
+        dc.DrawBitmap(bitmap, 0, 40, True)
+
+        self.button = []
+
+        for i in range(5):
+            self.button.append(wx.Button(self, label = 'Press {}'.format(i),\
+                size = (BUTTON_WIDTH, BUTTON_HEIGHT),\
+                pos = (100, 150 + (BUTTON_HEIGHT + BUTTON_PADDING) * i)))
+            self.button[i].myname = "{}".format(i)
+            self.Bind(wx.EVT_BUTTON, self.on_press, self.button[i])
+
+    def on_press(self, event):
+        self.level = int(event.GetEventObject().myname)
+        self.Close()
+        StartGame(self.level)
+
+
+if __name__ == '__main__':
+    try:
+        app = wx.App()
+        menuframe = MenuFrame(None, title = "Pacman AI",\
+            style = wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER ^ wx.MAXIMIZE_BOX)
         app.MainLoop()
     except RuntimeError:
         pass
