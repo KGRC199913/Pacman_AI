@@ -1,22 +1,17 @@
-import copy
 import threading
 import time
 import random
 from random import randrange
 
 import wx
-from math import *
 
-# Constains
+# Constants
 WINDOW_HEIGHT = 600
 WINDOW_WIDTH = 800
 WALL = 1
 FOOD = 2
 MONSTER = 3
 time_interval = 0.2
-
-# Global variables
-MAZE_MAP = None
 
 
 def read_map(map_name):
@@ -224,6 +219,8 @@ class AStarAgent:
 
     def get_next_step(self):
         self.stepCount += 1
+        if self.path is None:
+            return Node(position=self.start_pos)
         return self.path[self.stepCount]
 
     @staticmethod
@@ -319,7 +316,102 @@ class AStarAgent:
                 open_list.append(child)
 
     def is_finished(self):
-        return self.stepCount == self.path[self.map] - 1
+        if self.path is None:
+            return True
+        return self.stepCount == len(self.path) - 1
+
+
+class AStarGhostAgent:
+    def __init__(self, maze_map):
+        self.map = maze_map
+
+        self.start_node = None
+        self.end_node = None
+
+    def get_next_step(self):
+        path = self.__a_star(self.map, self.start_node, self.end_node)
+        if path is None:
+            return self.start_node.position
+        self.start_node = path[1]
+        return path[1].position
+
+    @staticmethod
+    def __euclidean_heuristic(from_pos, to_pos):
+        x = abs(from_pos.position[0] - to_pos.position[0])
+        y = abs(from_pos.position[1] - to_pos.position[1])
+
+        distance: float = sqrt((x * x) + (y * y))
+        return distance
+
+    # find least f node for A*
+    @staticmethod
+    def __find_least_f(open_list):
+        result = open_list[0]
+        for a in open_list:
+            if a.f < result.f:
+                result = a
+        return result
+
+    @staticmethod
+    def __generate_childs(maze_map, current_node):
+        childs = []
+        x = current_node.position[0]
+        y = current_node.position[1]
+
+        child = maze_map[x][y + 1]
+        if (child is not WALL) or (child is FOOD):
+            childs.append(Node(parent=current_node,
+                               position=(x, y + 1)))
+
+        child = maze_map[x][y - 1]
+        if (child is not WALL) or (child is FOOD):
+            childs.append(Node(parent=current_node,
+                               position=(x, y - 1)))
+
+        child = maze_map[x + 1][y]
+        if (child is not WALL) or (child is FOOD):
+            childs.append(Node(parent=current_node,
+                               position=(x + 1, y)))
+
+        child = maze_map[x - 1][y]
+        if (child is not WALL) or (child is FOOD):
+            childs.append(Node(parent=current_node,
+                               position=(x - 1, y)))
+        return childs
+
+    @staticmethod
+    # a* search alg
+    def __a_star(maze_map, start_node, end_node):
+        open_list = []
+        closed_list = []
+        path = []
+
+        if start_node is not end_node:
+            open_list.append(start_node)
+
+        while len(open_list) > 0:
+            current_node = AStarGhostAgent.__find_least_f(open_list)
+            closed_list.append(open_list.pop(open_list.index(current_node)))
+
+            if current_node == end_node:
+                while current_node is not None:
+                    path.append(current_node)
+                    current_node = current_node.parent
+                return path[::-1]
+
+            childs = AStarGhostAgent.__generate_childs(maze_map, current_node)
+
+            for child in childs:
+                if child in closed_list:
+                    continue
+                child.g = current_node.g + 1
+                child.h = AStarGhostAgent.__euclidean_heuristic(child, end_node)
+                child.f = child.g + child.h
+
+                for node in open_list:
+                    if child == node and child.g > current_node.g:
+                        continue
+                open_list.append(child)
 
 
 class Node:
@@ -346,10 +438,19 @@ class Map:
         self.map = maze_map
         self.mapWidth = len(maze_map[0])
         self.mapHeight = len(maze_map)
+        self.startDrawPos = None
         self.cellSize = floor(WINDOW_WIDTH / self.mapWidth)
+        self.startDrawPos = Node(parent=None,
+                                 position=(0, floor((WINDOW_HEIGHT - (self.mapHeight * self.cellSize)) / 2)))
         if self.cellSize > floor(WINDOW_HEIGHT / self.mapHeight):
             self.cellSize = floor(WINDOW_HEIGHT / self.mapHeight)
-        self.startDrawPos = floor((WINDOW_WIDTH - (self.mapWidth * self.cellSize)) / 2)
+            self.startDrawPos = Node(parent=None,
+                                     position=(floor((WINDOW_WIDTH - (self.mapWidth * self.cellSize)) / 2), 0))
+        # Pen related.
+        self.penWall = wx.Pen("#4c4c4c", self.cellSize)
+        self.penWall.SetCap(wx.CAP_BUTT)
+        self.penPath = wx.Pen("#ababab", self.cellSize)
+        self.penPath.SetCap(wx.CAP_BUTT)
         # Icons related.
         self.diamonIcon = createBitmap(".\\test\\icons\\diamon.png", self.cellSize)
         self.pacman = []
@@ -359,19 +460,23 @@ class Map:
         self.pacman.append(createBitmap(".\\test\\icons\\pacman4.png", self.cellSize))
         self.ghost = []
         self.ghost.append(createBitmap(".\\test\\icons\\ghost1.png", self.cellSize))
+        self.ghost.append(createBitmap(".\\test\\icons\\ghost1.png", self.cellSize))
+        self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png", self.cellSize))
         self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png", self.cellSize))
 
     def drawCell(self, clientDC, x_pos, y_pos):
-        clientDC.DrawLine(self.startDrawPos + self.cellSize * y_pos, self.cellSize * x_pos, \
-                          self.startDrawPos + self.cellSize * y_pos + self.cellSize, self.cellSize * x_pos)
+        clientDC.DrawLine(self.startDrawPos.position[0] + self.cellSize * y_pos,
+                          self.startDrawPos.position[1] + self.cellSize * x_pos, \
+                          self.startDrawPos.position[0] + self.cellSize * y_pos + self.cellSize,
+                          self.startDrawPos.position[1] + self.cellSize * x_pos)
 
     def drawBitmap(self, clientDC, bitmap, x_pos, y_pos):
-        clientDC.DrawBitmap(bitmap, self.startDrawPos + self.cellSize * y_pos, \
-                            self.cellSize * x_pos - floor(self.cellSize / 2), True)
+        clientDC.DrawBitmap(bitmap, self.startDrawPos.position[0] + self.cellSize * y_pos, \
+                            self.startDrawPos.position[1] + self.cellSize * x_pos - floor(self.cellSize / 2), True)
 
 
 def changeDirection(old_position, current_position):
-    if type(old_position) != type(current_position):
+    if type(old_position) is tuple:
         return 0
     if old_position.position[1] == current_position.position[1]:
         if old_position.position[0] < current_position.position[0]:
@@ -390,41 +495,78 @@ class GameFrame(wx.Frame):
         super(GameFrame, self).__init__(*args, **kwargs)
         self.SetSize(WINDOW_WIDTH, WINDOW_HEIGHT)
         self.agent = None
+        self.old_position = None
         self.current_position = None
         self.maze_map = None
-        self.monster_postions = None
+        self.monster_positions = None
         self.monster_agent = None
+        self.score = 1
+        self.status_bar = self.CreateStatusBar()
 
     def paint(self, newDirection):
         dc = wx.ClientDC(self)
-        dc.Clear()
-        pen = wx.Pen("#4c4c4c", self.maze_map.cellSize)
-        pen.SetCap(wx.CAP_BUTT)
-        dc.SetPen(pen)
         # draw map here
-        self.maze_map.drawBitmap(dc, self.maze_map.pacman[newDirection - 1], \
-                                 self.current_position.position[0], self.current_position.position[1])
         for i in range(self.maze_map.mapHeight):
             for j in range(self.maze_map.mapWidth):
                 if self.maze_map.map[i][j] == WALL:
+                    dc.SetPen(self.maze_map.penWall)
                     self.maze_map.drawCell(dc, i, j)
                 if self.maze_map.map[i][j] == FOOD:
+                    if self.current_position.position[0] == i and self.current_position.position[1] == j:
+                        dc.SetPen(self.maze_map.penPath)
+                        self.maze_map.drawCell(dc, i, j)
+                        self.score += 20
+                        continue
                     self.maze_map.drawBitmap(dc, self.maze_map.diamonIcon, i, j)
+                    self.score -= 1
 
-        for monster in self.monster_postions:
-            self.maze_map.drawBitmap(dc, self.maze_map.ghost[0],
+        if type(self.old_position) == type(self.current_position):
+            dc.SetPen(self.maze_map.penPath)
+            self.maze_map.drawCell(dc, self.old_position.position[0], self.old_position.position[1])
+
+        self.maze_map.drawBitmap(dc, self.maze_map.pacman[newDirection - 1], \
+                                 self.current_position.position[0], self.current_position.position[1])
+
+        for monster in self.monster_positions:
+            if type(monster.old_position) is not tuple or\
+            type(monster.old_position) is not None:
+                dc.SetPen(self.maze_map.penPath)
+                self.maze_map.drawCell(dc, monster.old_position[0], monster.old_position[1])
+            monster_direction = changeDirection(Node(position = (monster.old_position[0], monster.old_position[1])),\
+                Node(position = (monster.position[0], monster.position[1])))
+            self.maze_map.drawBitmap(dc, self.maze_map.ghost[monster_direction - 1],
                                      monster.position[0], monster.position[1])
 
     def start(self):
-        while not self.agent.is_finished():
-            old_position = self.current_position
+        while True:
+            # Update agent postion.
+            self.old_position = self.current_position
             self.current_position = self.agent.get_next_step()
-            for position_index, monster_position in enumerate(self.monster_postions):
-                self.monster_postions[position_index].position = \
+            # Update each monster agent position.
+            for position_index, monster_position in enumerate(self.monster_positions):
+                if type(self.monster_agent[position_index]) is AStarGhostAgent:
+                    self.monster_agent[position_index].start_node =\
+                        Node(position=self.monster_positions[position_index].position)
+                    self.monster_agent[position_index].end_node = self.current_position
+                # Update position.
+                self.monster_positions[position_index].old_position =\
+                    self.monster_positions[position_index].position
+                self.monster_positions[position_index].position =\
                     self.monster_agent[position_index].get_next_step()
+                # Check colission.
+                if type(self.old_position) is Node and\
+                type(self.monster_positions[position_index].old_position) is Node and\
+                self.old_position == self.monster_positions[position_index].old_position:
+                    return None
 
-            newDirection = changeDirection(old_position, self.current_position)
+            # Change agent's direction.
+            newDirection = changeDirection(self.old_position, self.current_position)
+            # Update graphics.
             self.paint(newDirection)
+            self.SetStatusText("Score: {}".format(self.score))
+
+            if self.agent.is_finished():
+                break
             time.sleep(time_interval)
 
     @staticmethod
@@ -444,7 +586,9 @@ class GameFrame(wx.Frame):
 
 class Monster:
     def __init__(self, position):
+        self.old_position = None
         self.position = position
+        self.direction = None
         self.obj_under = 0
 
 
@@ -491,17 +635,22 @@ class RandomAroundInitialAgent:
         return self.current_position
 
 
+class MenuFrame(wx.Frame):
+    def __init__(self, *args, **kwargs):
+        super(MenuFrame, self).__init__(*args, **kwargs)
+
+
 if __name__ == '__main__':
     try:
         app = wx.App()
-        map_matrix, start_position = read_map(".\\test\\maps\\demo05.txt")
-        game_frame = GameFrame(None, title="Test")
+        map_matrix, start_position = read_map(".\\test\\maps\\demo06.txt")
+        game_frame = GameFrame(None, title="Test", style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
         game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
         monster_positions = GameFrame.find_monster(map_matrix)
         # game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
         game_frame.agent = HillClimbing(map_matrix, start_position, monster_positions)
-        game_frame.monster_postions = monster_positions
+        game_frame.monster_positions = monster_positions
         monster_agents = []
         # level 1 & 2:
         # for i in range(len(monster_positions)):
@@ -515,6 +664,12 @@ if __name__ == '__main__':
             agent.start_position = monster_positions[i].position
             agent.current_position = copy.deepcopy(agent.start_position)
             monster_agents.append(agent)
+
+        # level 4
+        #for i in range(len(monster_positions)):
+         #   agent = AStarGhostAgent(maze_map=map_matrix)
+          #  agent.start_position = monster_positions[i].position
+           # monster_agents.append(agent)
 
         game_frame.monster_agent = monster_agents
         game_frame.Show()
