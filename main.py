@@ -5,7 +5,7 @@ from random import randrange
 
 import wx
 
-# Constains
+# Constants
 WINDOW_HEIGHT = 600
 WINDOW_WIDTH = 800
 WALL = 1
