@@ -5,7 +5,7 @@ from random import randrange
 
 import wx
 
-# Constains
+# Constants
 WINDOW_HEIGHT = 600
 WINDOW_WIDTH = 800
 WALL = 1
@@ -491,6 +491,8 @@ class GameFrame(wx.Frame):
         self.maze_map = None
         self.monster_positions = None
         self.monster_agent = None
+        self.score = 1
+        self.status_bar = self.CreateStatusBar()
 
     def paint(self, newDirection):
         dc = wx.ClientDC(self)
@@ -504,8 +506,10 @@ class GameFrame(wx.Frame):
                     if self.current_position.position[0] == i and self.current_position.position[1] == j:
                         dc.SetPen(self.maze_map.penPath)
                         self.maze_map.drawCell(dc, i, j)
+                        self.score += 20
                         continue
                     self.maze_map.drawBitmap(dc, self.maze_map.diamonIcon, i, j)
+                    self.score -= 1
 
         if type(self.old_position) == type(self.current_position):
             dc.SetPen(self.maze_map.penPath)
@@ -526,20 +530,32 @@ class GameFrame(wx.Frame):
 
     def start(self):
         while True:
+            # Update agent postion.
             self.old_position = self.current_position
             self.current_position = self.agent.get_next_step()
+            # Update each monster agent position.
             for position_index, monster_position in enumerate(self.monster_positions):
                 if type(self.monster_agent[position_index]) is AStarGhostAgent:
                     self.monster_agent[position_index].start_node =\
                         Node(position=self.monster_positions[position_index].position)
                     self.monster_agent[position_index].end_node = self.current_position
+                # Update position.
                 self.monster_positions[position_index].old_position =\
                     self.monster_positions[position_index].position
                 self.monster_positions[position_index].position =\
                     self.monster_agent[position_index].get_next_step()
+                # Check colission.
+                if type(self.old_position) is Node and\
+                type(self.monster_positions[position_index].old_position) is Node and\
+                self.old_position == self.monster_positions[position_index].old_position:
+                    return None
 
+            # Change agent's direction.
             newDirection = changeDirection(self.old_position, self.current_position)
+            # Update graphics.
             self.paint(newDirection)
+            self.SetStatusText("Score: {}".format(self.score))
+
             if self.agent.is_finished():
                 break
             time.sleep(time_interval)
@@ -610,11 +626,16 @@ class RandomAroundInitialAgent:
         return self.current_position
 
 
+class MenuFrame(wx.Frame):
+    def __init__(self, *args, **kwargs):
+        super(MenuFrame, self).__init__(*args, **kwargs)
+
+
 if __name__ == '__main__':
     try:
         app = wx.App()
         map_matrix, start_position = read_map(".\\test\\maps\\demo06.txt")
-        game_frame = GameFrame(None, title="Test")
+        game_frame = GameFrame(None, title="Test", style=wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER)
         game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
         monster_positions = GameFrame.find_monster(map_matrix)
