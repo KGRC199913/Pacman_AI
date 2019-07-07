@@ -1,19 +1,14 @@
 import threading
 import time
 from math import *
-from random import randrange, random
+from random import randrange
 
 from algorithms import *
 import wx
 
-# Constants
+# Constains
 WINDOW_HEIGHT = 600
 WINDOW_WIDTH = 800
-MENU_HEIGHT = 450
-MENU_WIDTH = 300
-BUTTON_HEIGHT = 25
-BUTTON_WIDTH = 100
-BUTTON_PADDING = 5
 WALL = 1
 FOOD = 2
 MONSTER = 3
@@ -43,56 +38,15 @@ class HillClimbing:
             self.monsters = []
         else:
             self.monsters = monsters_list
+        start_node = Node(position=start_pos)
 
-        self.start_node = Node(position=start_pos)
-        self.end_node = None
+        self.path = self.__hill_climbing(self.map, start_node, self.monsters)
+        self.start_pos = start_pos
+        self.stepCount = -1
 
     def get_next_step(self):
-
-        scans = HillClimbing.__pacman_scan(self.map, self.start_node)
-        min_distance = HillClimbing.__calc_distance(self.start_node, scans[0])
-
-        temp = None
-        for i in range(len(scans)):
-            if HillClimbing.__calc_distance(self.start_node, scans[i]) < min_distance and scans[i] == FOOD:
-                min_distance = HillClimbing.__calc_distance(self.start_node, scans[i])
-                temp = scans[i]
-        if self.end_node is None and temp is not None:
-            self.end_node = temp
-        if self.end_node is None and temp is None:
-            while self.end_node is None \
-                    or self.map[self.end_node.position[0]][self.end_node.position[1]] == WALL:
-                rd = HillClimbing.random_pos(self.start_node)
-                self.end_node = rd
-
-        path = HillClimbing.__a_star(self.map, self.start_node, self.end_node, self.monsters)
-        if self.map[path[1].position[0]][path[1].position[1]] == FOOD:
-            self.end_node = None
-        self.start_node = path[1]
-        return path[1]
-
-    @staticmethod
-    def random_pos(node):
-        pos = None
-        rd_xy = randrange(0, 1)
-        rd_1 = randrange(-1, 1)
-        if rd_1 != 0:
-            rd_2 = 0
-        else:
-            rd_2 = randrange(-1, 1)
-        if rd_xy == 0:
-            pos = (node.position[0] + rd_1, node.position[1] + rd_2)
-        else:
-            pos = (node.position[0] + rd_2, node.position[1] + rd_1)
-        return Node(position=pos)
-
-    def is_finished(self):
-        food = FOOD
-        is_finished = True
-        for line in self.map:
-            if food in line:
-                is_finished = False
-        return is_finished
+        self.stepCount += 1
+        return self.path[self.stepCount]
 
     @staticmethod
     def __manhattan_heuristic(from_pos, to_pos):
@@ -206,11 +160,38 @@ class HillClimbing:
                         continue
                 open_list.append(child)
 
+    def is_finished(self):
+        return
+
+    @staticmethod
+    def __hill_climbing(maze_map, start_node, monster_positions):
+        scans = HillClimbing.__pacman_scan(maze_map, start_node)
+        min_distance = HillClimbing.__calc_distance(start_node, scans[0])
+        end_node = scans[0]
+        if HillClimbing.check_finish(maze_map):
+            return
+        if end_node is None:
+            start_node = (start_node.position[0] + 1, start_node.position[1])
+        for i in range(len(scans)):
+            if HillClimbing.__calc_distance(start_node, scans[i]) < min_distance and scans[i] == FOOD:
+                min_distance = HillClimbing.__calc_distance(start_node, scans[i])
+                end_node = scans[i]
+        if end_node is not None:
+            HillClimbing.__hill_climbing(maze_map, end_node, monster_positions)
+            return HillClimbing.__a_star(maze_map, start_node, end_node, monster_positions)
+
     @staticmethod
     def __calc_distance(currend_node, end_node):
         return sqrt(
             (currend_node.position[0] - end_node.position[0]) * (currend_node.position[0] - end_node.position[0]) \
             + (currend_node.position[1] - end_node.position[1]) * (currend_node.position[1] - end_node.position[1]))
+
+    @staticmethod
+    def check_finish(maze_map):
+        food = FOOD
+        if food in maze_map:
+            return False
+        return True
 
 
 class AStarAgent:
@@ -342,11 +323,9 @@ class AStarGhostAgent:
     def get_next_step(self):
         path = self.__a_star(self.map, self.start_node, self.end_node)
         if path is None:
-            return self.start_node
-        if len(path) > 1:
-            self.start_node = path[1]
-            return path[1].position
-        return path[0].position
+            return self.start_node.position
+        self.start_node = path[1]
+        return path[1].position
 
     @staticmethod
     def __euclidean_heuristic(from_pos, to_pos):
@@ -473,8 +452,6 @@ class Map:
         self.pacman.append(createBitmap(".\\test\\icons\\pacman4.png", self.cellSize))
         self.ghost = []
         self.ghost.append(createBitmap(".\\test\\icons\\ghost1.png", self.cellSize))
-        self.ghost.append(createBitmap(".\\test\\icons\\ghost1.png", self.cellSize))
-        self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png", self.cellSize))
         self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png", self.cellSize))
 
     def drawCell(self, clientDC, x_pos, y_pos):
@@ -489,7 +466,7 @@ class Map:
 
 
 def changeDirection(old_position, current_position):
-    if type(old_position) is tuple:
+    if type(old_position) != type(current_position):
         return 0
     if old_position.position[1] == current_position.position[1]:
         if old_position.position[0] < current_position.position[0]:
@@ -513,8 +490,6 @@ class GameFrame(wx.Frame):
         self.maze_map = None
         self.monster_positions = None
         self.monster_agent = None
-        self.score = 1
-        self.status_bar = self.CreateStatusBar()
 
     def paint(self, newDirection):
         dc = wx.ClientDC(self)
@@ -528,10 +503,8 @@ class GameFrame(wx.Frame):
                     if self.current_position.position[0] == i and self.current_position.position[1] == j:
                         dc.SetPen(self.maze_map.penPath)
                         self.maze_map.drawCell(dc, i, j)
-                        self.score += 20
                         continue
                     self.maze_map.drawBitmap(dc, self.maze_map.diamonIcon, i, j)
-                    self.score -= 1
 
         if type(self.old_position) == type(self.current_position):
             dc.SetPen(self.maze_map.penPath)
@@ -541,47 +514,23 @@ class GameFrame(wx.Frame):
                                  self.current_position.position[0], self.current_position.position[1])
 
         for monster in self.monster_positions:
-            if type(monster.old_position) is not tuple or \
-                    type(monster.old_position) is not None:
-                dc.SetPen(self.maze_map.penPath)
-                self.maze_map.drawCell(dc, monster.old_position[0], monster.old_position[1])
-            monster_direction = changeDirection(Node(position=(monster.old_position[0], monster.old_position[1])), \
-                                                Node(position=(monster.position[0], monster.position[1])))
-            self.maze_map.drawBitmap(dc, self.maze_map.ghost[monster_direction - 1],
+            self.maze_map.drawBitmap(dc, self.maze_map.ghost[0],
                                      monster.position[0], monster.position[1])
-
-    def isHit(self, pacman_pos, monster_pos):
-        if type(pacman_pos) is Node and type(monster_pos) is Node and pacman_pos == monster_pos:
-            return True
-        return False
 
     def start(self):
         while True:
-            # Update agent postion.
             self.old_position = self.current_position
             self.current_position = self.agent.get_next_step()
-            # Update each monster agent position.
             for position_index, monster_position in enumerate(self.monster_positions):
                 if type(self.monster_agent[position_index]) is AStarGhostAgent:
-                    self.monster_agent[position_index].start_node = \
+                    self.monster_agent[position_index].start_node =\
                         Node(position=self.monster_positions[position_index].position)
                     self.monster_agent[position_index].end_node = self.current_position
-                # Update position.
-                self.monster_positions[position_index].old_position = \
-                    self.monster_positions[position_index].position
-                self.monster_positions[position_index].position = \
+                self.monster_positions[position_index].position =\
                     self.monster_agent[position_index].get_next_step()
-                # Check colission.
 
-                if self.isHit(self.old_position, self.monster_positions[position_index].old_position):
-                    return None
-
-            # Change agent's direction.
             newDirection = changeDirection(self.old_position, self.current_position)
-            # Update graphics.
             self.paint(newDirection)
-            self.SetStatusText("Score: {}".format(self.score))
-
             if self.agent.is_finished():
                 break
             time.sleep(time_interval)
@@ -603,9 +552,7 @@ class GameFrame(wx.Frame):
 
 class Monster:
     def __init__(self, position):
-        self.old_position = None
         self.position = position
-        self.direction = None
         self.obj_under = 0
 
 
@@ -652,39 +599,38 @@ class RandomAroundInitialAgent:
         return self.current_position
 
 
-def StartGame(level = 0):
+if __name__ == '__main__':
     try:
-        if level == 0:
-            return None
-        map_matrix, start_position = read_map(".\\test\\maps\\demo06.txt")
-        game_frame = GameFrame(None, title="Test", style=wx.DEFAULT_FRAME_STYLE ^\
-            wx.RESIZE_BORDER ^ wx.MAXIMIZE_BOX)
+        app = wx.App()
+        map_matrix, start_position = read_map(".\\test\\maps\\demo01.txt")
+        game_frame = GameFrame(None, title="Test")
         game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
         monster_positions = GameFrame.find_monster(map_matrix)
-        # game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
-        # game_frame.agent = AStarFlexPacmanAgent(map_matrix, start_position, monster_positions)
-        game_frame.agent = HillClimbing(map_matrix, start_position, monster_positions)
+        #game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
+        #game_frame.agent = HillClimbing(map_matrix, start_position, monster_positions)
+        #game_frame.agent = AStarFlexPacmanAgent(map_matrix, start_position, monster_positions)
+
         game_frame.monster_positions = monster_positions
         monster_agents = []
-        if level == 1 or level == 2:
-            for i in range(len(monster_positions)):
-                agent = StandStillAgent(maze_map=map_matrix)
-                agent.start_position = monster_positions[i].position
-                monster_agents.append(agent)
+        # level 1 & 2:
+        #for i in range(len(monster_positions)):
+        #     agent = StandStillAgent(maze_map=map_matrix)
+        #     agent.start_position = monster_positions[i].position
+        #     monster_agents.append(agent)
 
-        if level == 3:
-            for i in range(len(monster_positions)):
-                agent = RandomAroundInitialAgent(maze_map=map_matrix)
-                agent.start_position = monster_positions[i].position
-                agent.current_position = copy.deepcopy(agent.start_position)
-                monster_agents.append(agent)
+        # level 3
+        # for i in range(len(monster_positions)):
+        #     agent = RandomAroundInitialAgent(maze_map=map_matrix)
+        #     agent.start_position = monster_positions[i].position
+        #     agent.current_position = copy.deepcopy(agent.start_position)
+        #     monster_agents.append(agent)
 
-        if level == 4:
-            for i in range(len(monster_positions)):
-                agent = AStarGhostAgent(maze_map=map_matrix)
-                agent.start_position = monster_positions[i].position
-                monster_agents.append(agent)
+        # level 4
+        for i in range(len(monster_positions)):
+            agent = AStarGhostAgent(maze_map=map_matrix)
+            agent.start_position = monster_positions[i].position
+            monster_agents.append(agent)
 
         # Pacman Agent
         game_frame.agent = AStarFlexPacmanAgent(map_matrix, start_position,monster_positions)
@@ -694,46 +640,6 @@ def StartGame(level = 0):
         game_frame.Show()
         thread = threading.Thread(target=game_frame.start)
         thread.start()
-    except RuntimeError:
-        pass
-
-
-class MenuFrame(wx.Frame):
-    def __init__(self, *args, **kwargs):
-        super(MenuFrame, self).__init__(*args, **kwargs)
-        self.SetSize(MENU_WIDTH, MENU_HEIGHT)
-        self.Show()
-        self.level = None
-
-        dc = wx.ClientDC(self)
-
-        bitmap = wx.Bitmap(".\\test\\icons\\logo.png")
-        img = bitmap.ConvertToImage()
-        img = img.Scale(280, 73, wx.IMAGE_QUALITY_HIGH)
-        bitmap = wx.Bitmap(img)
-
-        dc.DrawBitmap(bitmap, 0, 40, True)
-
-        self.button = []
-
-        for i in range(5):
-            self.button.append(wx.Button(self, label = 'Press {}'.format(i),\
-                size = (BUTTON_WIDTH, BUTTON_HEIGHT),\
-                pos = (100, 150 + (BUTTON_HEIGHT + BUTTON_PADDING) * i)))
-            self.button[i].myname = "{}".format(i)
-            self.Bind(wx.EVT_BUTTON, self.on_press, self.button[i])
-
-    def on_press(self, event):
-        self.level = int(event.GetEventObject().myname)
-        self.Close()
-        StartGame(self.level)
-
-
-if __name__ == '__main__':
-    try:
-        app = wx.App()
-        menuframe = MenuFrame(None, title = "Pacman AI",\
-            style = wx.DEFAULT_FRAME_STYLE ^ wx.RESIZE_BORDER ^ wx.MAXIMIZE_BOX)
         app.MainLoop()
     except RuntimeError:
         pass
