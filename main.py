@@ -569,6 +569,7 @@ class GameFrame(wx.Frame):
         return False
 
     def start(self):
+        self.current_position = Node(position=self.current_position)
         while True:
             # Update each monster agent position.
             for position_index, monster_position in enumerate(self.monster_positions):
