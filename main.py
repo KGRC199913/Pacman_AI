@@ -603,13 +603,14 @@ if __name__ == '__main__':
     try:
         app = wx.App()
         map_matrix, start_position = read_map(".\\test\\maps\\demo01.txt")
-        game_frame = GameFrame(None, title="Test")
+        game_frame = GameFrame(None, title="Test", style=wx.DEFAULT_FRAME_STYLE ^\
+            wx.RESIZE_BORDER ^ wx.MAXIMIZE_BOX)
         game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
         monster_positions = GameFrame.find_monster(map_matrix)
-        #game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
+        # game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
+        game_frame.agent = AStarFlexPacmanAgent(map_matrix, start_position, monster_positions)
         #game_frame.agent = HillClimbing(map_matrix, start_position, monster_positions)
-        #game_frame.agent = AStarFlexPacmanAgent(map_matrix, start_position, monster_positions)
 
         game_frame.monster_positions = monster_positions
         monster_agents = []
