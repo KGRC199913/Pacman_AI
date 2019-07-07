@@ -492,6 +492,8 @@ class GameFrame(wx.Frame):
         self.maze_map = None
         self.monster_positions = None
         self.monster_agent = None
+        self.score = 1
+        self.status_bar = self.CreateStatusBar()
 
     def paint(self, newDirection):
         dc = wx.ClientDC(self)
@@ -505,8 +507,10 @@ class GameFrame(wx.Frame):
                     if self.current_position.position[0] == i and self.current_position.position[1] == j:
                         dc.SetPen(self.maze_map.penPath)
                         self.maze_map.drawCell(dc, i, j)
+                        self.score += 20
                         continue
                     self.maze_map.drawBitmap(dc, self.maze_map.diamonIcon, i, j)
+                    self.score -= 1
 
         if type(self.old_position) == type(self.current_position):
             dc.SetPen(self.maze_map.penPath)
@@ -542,7 +546,8 @@ class GameFrame(wx.Frame):
                 self.monster_positions[position_index].position =\
                     self.monster_agent[position_index].get_next_step()
                 # Check colission.
-                if type(self.old_position) is Node and type(self.monster_positions[position_index].old_position) is Node and\
+                if type(self.old_position) is Node and\
+                type(self.monster_positions[position_index].old_position) is Node and\
                 self.old_position == self.monster_positions[position_index].old_position:
                     return None
 
@@ -550,6 +555,7 @@ class GameFrame(wx.Frame):
             newDirection = changeDirection(self.old_position, self.current_position)
             # Update graphics.
             self.paint(newDirection)
+            self.SetStatusText("Score: {}".format(self.score))
 
             if self.agent.is_finished():
                 break
