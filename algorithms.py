@@ -12,14 +12,15 @@ class AStarFlexPacmanAgent:
         self.monsters = monsters_list
         self.start_node = Node(position=start_pos)
         self.end_node = AStarFlexPacmanAgent.__choose_food(self.start_node, maze_map)
-        #self.path = self.__a_star(maze_map, self.start_node, self.end_node, self.monsters)
+        # self.path = self.__a_star(maze_map, self.start_node, self.end_node, self.monsters)
 
     def get_next_step(self):
-        path = self.__a_star(self.map, self.start_node, self.end_node, self.monsters)
-        if path is None :
+        path = self.__a_star(self.map, self.start_node, AStarFlexPacmanAgent.__choose_food(self.start_node, self.map), self.monsters)
+        if path is None:
             self.end_node = None
             return self.start_node.position
         self.start_node = path[1]
+        self.start_node.parent = None
         return path[1]
 
     @staticmethod
@@ -42,7 +43,7 @@ class AStarFlexPacmanAgent:
         for i in range(height):
             for j in range(width):
                 if maze_map[i][j] == FOOD:
-                    foods.append(Node(position=(i,j)))
+                    foods.append(Node(position=(i, j)))
         return foods
 
     @staticmethod
@@ -121,9 +122,8 @@ class AStarFlexPacmanAgent:
                         continue
                 open_list.append(child)
 
-
     # For Testing Purporse
     def is_finished(self):
-        if self.__find_foods(self.map) is None:
+        if self.__choose_food(self.start_node, self.map) is None:
             return True
         return False
