@@ -20,6 +20,7 @@ class AStarFlexPacmanAgent:
             self.end_node = None
             return self.start_node.position
         self.start_node = path[1]
+        self.start_node.parent = None
         return path[1]
 
     @staticmethod

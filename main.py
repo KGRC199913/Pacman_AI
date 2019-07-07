@@ -1,3 +1,4 @@
+import copy
 import threading
 import time
 from math import *
@@ -66,10 +67,22 @@ class HillClimbing:
                 self.end_node = rd
 
         path = HillClimbing.__a_star(self.map, self.start_node, self.end_node, self.monsters)
-        if self.map[path[1].position[0]][path[1].position[1]] == FOOD:
-            self.end_node = None
-        self.start_node = path[1]
-        return path[1]
+        if (len(path) > 1):
+            if self.map[path[1].position[0]][path[1].position[1]] == FOOD:
+                self.end_node = None
+            self.start_node = path[1]
+            self.start_node.parent = None
+            if self.start_node == self.end_node:
+                self.end_node = None
+            return path[1]
+        else:
+            if self.map[path[0].position[0]][path[0].position[1]] == FOOD:
+                self.end_node = None
+            self.start_node = path[0]
+            self.start_node.parent = None
+            if self.start_node == self.end_node:
+                self.end_node = None
+            return path[0]
 
     @staticmethod
     def random_pos(node):
@@ -687,8 +700,8 @@ def StartGame(level = 0):
                 monster_agents.append(agent)
 
         # Pacman Agent
-        game_frame.agent = AStarFlexPacmanAgent(map_matrix, start_position,monster_positions)
-        #game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
+        # game_frame.agent = AStarFlexPacmanAgent(map_matrix, start_position, monster_positions)
+        # game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
 
         game_frame.monster_agent = monster_agents
         game_frame.Show()
