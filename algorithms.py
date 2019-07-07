@@ -254,10 +254,10 @@ class AStarAgent:
             return True
         return self.stepCount == len(self.path) - 1
 
-
 class AStarFlexPacmanAgent:
     def __init__(self, maze_map, start_pos, monsters_list):
 
+        self.is_confuse = False
         self.map = maze_map
 
         self.start_node = None
@@ -271,10 +271,12 @@ class AStarFlexPacmanAgent:
     def get_next_step(self):
         if self.start_node == self.end_node:
             self.map = self.__update_map_and_food(self.start_node, self.map, self.monsters, True)
+        self.map = self.__update_map_and_food(self.start_node, self.map, self.monsters)
         path = self.__a_star(self.map, self.start_node,
                              AStarFlexPacmanAgent.__choose_food(self.start_node, self.map, self.monsters),
                              self.monsters)
-        #if path is None:
+        if path is None:
+            self.is_confuse = True
         #    # self.end_node = None
         #    path = self.__a_star(self.map, self.start_node,
         #                         AStarFlexPacmanAgent.__choose_food(self.start_node, self.map, self.monsters),
@@ -283,12 +285,10 @@ class AStarFlexPacmanAgent:
         #    self.start_node.parent = None
         #    self.map = self.__update_map_and_food(self.start_node, self.map, self.monsters)
         #    return path[1]
-        if path is not None:
-            self.start_node = path[1]
-            self.start_node.parent = None
-            self.map = self.__update_map_and_food(self.start_node, self.map, self.monsters)
-            return path[1]
-        return self.start_node
+        self.start_node = path[1]
+        self.start_node.parent = None
+        self.map = self.__update_map_and_food(self.start_node, self.map, self.monsters)
+        return path[1]
 
     @staticmethod
     def __update_map_and_food(current_node, maze_map, monsters, is_feeded=False):
@@ -328,11 +328,14 @@ class AStarFlexPacmanAgent:
         # monsters_position = [monster.position for monster in monsters]
         # while (result.position[0], result.position[1]) not in monsters_position:
         #    result = foods[foods.index(result) + 1]
+        path =[]
         for food in foods:
             if AStarFlexPacmanAgent.__manhattan_heuristic(start_node, food) \
                     < AStarFlexPacmanAgent.__manhattan_heuristic(start_node, result):
                 for monster in monsters:
-                    if food.position is not monster.position:
+                    path = AStarFlexPacmanAgent.__a_star(maze_map, start_node,
+                             food, monsters)
+                    if (path is not None):
                         result = food
         return result
 
@@ -434,10 +437,7 @@ class AStarFlexPacmanAgent:
             return True
         if self.start_node in self.monsters:
             return True
-        self.map = self.__update_map_and_food(self.start_node, self.map, self.monsters, False)
-        if self.__a_star(self.map, self.start_node,
-                         AStarFlexPacmanAgent.__choose_food(self.start_node, self.map, self.monsters),
-                         self.monsters) is None:
 
+        if (self.is_confuse == True):
             return True
         return False
