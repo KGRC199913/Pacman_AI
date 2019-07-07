@@ -672,12 +672,12 @@ def StartGame(level = 0):
         map_matrix, start_position = read_map(".\\maps\\demo0{}.txt".format(randint(1,6)))
         game_frame = GameFrame(None, title="Test", style=wx.DEFAULT_FRAME_STYLE ^\
             wx.RESIZE_BORDER ^ wx.MAXIMIZE_BOX)
+        monster_positions = GameFrame.find_monster(map_matrix)
         game_frame.maze_map = Map(map_matrix)
         game_frame.current_position = start_position
-        monster_positions = GameFrame.find_monster(map_matrix)
-        # game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
+        game_frame.agent = AStarAgent(map_matrix, start_position, monster_positions)
         # game_frame.agent = AStarFlexPacmanAgent(map_matrix, start_position, monster_positions)
-        game_frame.agent = HillClimbing(map_matrix, start_position, monster_positions)
+        # game_frame.agent = HillClimbing(map_matrix, start_position, monster_positions)
         game_frame.monster_positions = monster_positions
         monster_agents = []
         if level == 1 or level == 2:
