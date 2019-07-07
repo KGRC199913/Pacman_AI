@@ -2,7 +2,7 @@ import copy
 import threading
 import time
 from math import *
-from random import randrange, random
+from random import randrange, random, randint
 
 from algorithms import *
 import wx
@@ -478,17 +478,17 @@ class Map:
         self.penPath = wx.Pen("#ababab", self.cellSize)
         self.penPath.SetCap(wx.CAP_BUTT)
         # Icons related.
-        self.diamonIcon = createBitmap(".\\test\\icons\\diamon.png", self.cellSize)
+        self.diamonIcon = createBitmap(".\\icons\\diamon.png", self.cellSize)
         self.pacman = []
-        self.pacman.append(createBitmap(".\\test\\icons\\pacman1.png", self.cellSize))
-        self.pacman.append(createBitmap(".\\test\\icons\\pacman2.png", self.cellSize))
-        self.pacman.append(createBitmap(".\\test\\icons\\pacman3.png", self.cellSize))
-        self.pacman.append(createBitmap(".\\test\\icons\\pacman4.png", self.cellSize))
+        self.pacman.append(createBitmap(".\\icons\\pacman1.png", self.cellSize))
+        self.pacman.append(createBitmap(".\\icons\\pacman2.png", self.cellSize))
+        self.pacman.append(createBitmap(".\\icons\\pacman3.png", self.cellSize))
+        self.pacman.append(createBitmap(".\\icons\\pacman4.png", self.cellSize))
         self.ghost = []
-        self.ghost.append(createBitmap(".\\test\\icons\\ghost1.png", self.cellSize))
-        self.ghost.append(createBitmap(".\\test\\icons\\ghost1.png", self.cellSize))
-        self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png", self.cellSize))
-        self.ghost.append(createBitmap(".\\test\\icons\\ghost3.png", self.cellSize))
+        self.ghost.append(createBitmap(".\\icons\\ghost1.png", self.cellSize))
+        self.ghost.append(createBitmap(".\\icons\\ghost1.png", self.cellSize))
+        self.ghost.append(createBitmap(".\\icons\\ghost3.png", self.cellSize))
+        self.ghost.append(createBitmap(".\\icons\\ghost3.png", self.cellSize))
 
     def drawCell(self, clientDC, x_pos, y_pos):
         clientDC.DrawLine(self.startDrawPos.position[0] + self.cellSize * y_pos,
@@ -669,7 +669,7 @@ def StartGame(level = 0):
     try:
         if level == 0:
             return None
-        map_matrix, start_position = read_map(".\\test\\maps\\demo06.txt")
+        map_matrix, start_position = read_map(".\\maps\\demo0{}.txt".format(randint(1,6)))
         game_frame = GameFrame(None, title="Test", style=wx.DEFAULT_FRAME_STYLE ^\
             wx.RESIZE_BORDER ^ wx.MAXIMIZE_BOX)
         game_frame.maze_map = Map(map_matrix)
@@ -720,7 +720,7 @@ class MenuFrame(wx.Frame):
 
         dc = wx.ClientDC(self)
 
-        bitmap = wx.Bitmap(".\\test\\icons\\logo.png")
+        bitmap = wx.Bitmap(".\\icons\\logo.png")
         img = bitmap.ConvertToImage()
         img = img.Scale(280, 73, wx.IMAGE_QUALITY_HIGH)
         bitmap = wx.Bitmap(img)
@@ -729,11 +729,11 @@ class MenuFrame(wx.Frame):
 
         self.button = []
 
-        for i in range(5):
-            self.button.append(wx.Button(self, label = 'Press {}'.format(i),\
+        for i in range(4):
+            self.button.append(wx.Button(self, label = 'Level {}'.format(i + 1),\
                 size = (BUTTON_WIDTH, BUTTON_HEIGHT),\
                 pos = (100, 150 + (BUTTON_HEIGHT + BUTTON_PADDING) * i)))
-            self.button[i].myname = "{}".format(i)
+            self.button[i].myname = "{}".format(i + 1)
             self.Bind(wx.EVT_BUTTON, self.on_press, self.button[i])
 
     def on_press(self, event):
